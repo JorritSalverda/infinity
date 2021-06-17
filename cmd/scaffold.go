@@ -9,8 +9,9 @@ import (
 var scaffoldCmd = &cobra.Command{
 	Use:   "scaffold",
 	Short: "Scaffold and application build .infinity.yaml manifest",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// Do Stuff Here
 		fmt.Println("Creating .infinity.yaml")
+		return nil
 	},
 }

@@ -21,6 +21,7 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(scaffoldCmd)
+	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(buildCmd)
 }
