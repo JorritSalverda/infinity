@@ -9,7 +9,7 @@ var validateCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate the .infinity.yaml manifest",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		builder := lib.NewBuilder()
+		builder := lib.NewBuilder(verbose)
 		return builder.Validate(cmd.Context())
 	},
 }

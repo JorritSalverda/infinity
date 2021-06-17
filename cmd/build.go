@@ -9,7 +9,7 @@ var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build your application using the .infinity.yaml manifest",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		builder := lib.NewBuilder()
+		builder := lib.NewBuilder(verbose)
 		return builder.Build(cmd.Context())
 	},
 }

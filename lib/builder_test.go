@@ -9,7 +9,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("SucceedsIfInfinityManifestIsValid", func(t *testing.T) {
-		builder := NewBuilder()
+		builder := NewBuilder(false)
 
 		// act
 		err := builder.Validate(context.Background())
