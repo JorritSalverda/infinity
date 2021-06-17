@@ -7,7 +7,7 @@ Infinity is a CLI to easily build your applications using a pipeline as code
 ## From source
 
 ```
-go get -u github.com/JorritSalverda/infinity
+go install github.com/JorritSalverda/infinity
 ```
 
 ## With Homebrew
@@ -21,7 +21,7 @@ First install Homebrew:
 Then install the `infinity` cli with
 
 ```
-brew install JorritSalverda/stable/infinity
+brew install jorritsalverda/core/infinity
 ```
 
 # Usage

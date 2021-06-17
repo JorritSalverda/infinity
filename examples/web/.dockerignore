@@ -1,0 +1,8 @@
+# Directories to exclude
+.git
+
+# Files to exclude
+.gitignore
+.infinity.yaml
+Dockerfile
+README.md
