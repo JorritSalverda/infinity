@@ -11,6 +11,8 @@ var (
 	}
 	verboseFlag               bool
 	buildManifestFilenameFlag string
+
+	version = "v0.0.0"
 )
 
 // Execute executes the root command.
@@ -25,4 +27,5 @@ func init() {
 	rootCmd.AddCommand(scaffoldCmd)
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(buildCmd)
+	rootCmd.AddCommand(versionCmd)
 }
