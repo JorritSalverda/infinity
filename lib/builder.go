@@ -24,17 +24,19 @@ type Builder interface {
 type builder struct {
 	verbose               bool
 	buildManifestFilename string
+	pulledImages          map[string]struct{}
 }
 
 func NewBuilder(verbose bool, buildManifestFilename string) Builder {
 	return &builder{
 		buildManifestFilename: buildManifestFilename,
 		verbose:               verbose,
+		pulledImages:          make(map[string]struct{}),
 	}
 }
 
 func (b *builder) Validate(ctx context.Context) (err error) {
-	log.Printf("Validating manifest %v...\n", b.buildManifestFilename)
+	log.Printf("Validating manifest %v\n", aurora.BrightBlue(b.buildManifestFilename))
 
 	manifest, err := b.getManifest(ctx)
 	if err != nil {
@@ -52,7 +54,7 @@ func (b *builder) Validate(ctx context.Context) (err error) {
 }
 
 func (b *builder) Build(ctx context.Context) (err error) {
-	log.Printf("Building manifest %v...\n", b.buildManifestFilename)
+	log.Printf("Building manifest %v\n", aurora.BrightBlue(b.buildManifestFilename))
 
 	manifest, err := b.getManifest(ctx)
 	if err != nil {
@@ -108,14 +110,61 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 }
 
 func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error) {
-	pwd, err := os.Getwd()
+	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
+
+	// docker pull <image>
+	err = b.dockerPull(ctx, logger, stage)
 	if err != nil {
 		return
 	}
 
-	stageLogger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
-
 	// docker run <image> <commands>
+	err = b.dockerRun(ctx, logger, stage)
+	if err != nil {
+		return
+	}
+
+	return nil
+}
+
+func (b *builder) dockerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+
+	if _, ok := b.pulledImages[stage.Image]; ok {
+		logger.Printf(aurora.Gray(12, "Already pulled image %v").String(), aurora.BrightBlue(stage.Image))
+		return
+	}
+
+	dockerCommand := "docker"
+	dockerPullArgs := []string{
+		"pull",
+		stage.Image,
+	}
+	if b.verbose {
+		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerPullArgs, " "))
+	}
+
+	logger.Printf(aurora.Gray(12, "Pulling image %v").String(), aurora.BrightBlue(stage.Image))
+
+	start := time.Now()
+	err = b.runCommandWithLogger(ctx, logger, dockerCommand, dockerPullArgs)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		logger.Printf(aurora.Gray(12, "Failed pulling in %v").String(), aurora.BrightRed(elapsed.String()))
+		return fmt.Errorf("Pulling image %v for stage %v failed: %w", stage.Image, stage.Name, err)
+	}
+	logger.Printf(aurora.Gray(12, "Pulled in %v").String(), aurora.BrightGreen(elapsed.String()))
+
+	b.pulledImages[stage.Image] = struct{}{}
+
+	return nil
+}
+
+func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
 
 	commandsArg := []string{}
 	for _, c := range stage.Commands {
@@ -147,18 +196,20 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 	}...)
 
 	if b.verbose {
-		stageLogger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerRunArgs, " "))
+		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerRunArgs, " "))
 	}
 
+	logger.Printf(aurora.Gray(12, "Executing commands").String())
+
 	start := time.Now()
-	err = b.runCommandWithLogger(ctx, stageLogger, dockerCommand, dockerRunArgs)
+	err = b.runCommandWithLogger(ctx, logger, dockerCommand, dockerRunArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
-		stageLogger.Printf(aurora.Gray(12, "failed in %v").String(), aurora.BrightRed(elapsed.String()))
+		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("Stage %v failed: %w", stage.Name, err)
 	}
-	stageLogger.Printf(aurora.Gray(12, "completed in %v").String(), aurora.BrightGreen(elapsed.String()))
+	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
 
 	return nil
 }
