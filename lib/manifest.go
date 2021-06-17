@@ -11,10 +11,12 @@ type ManifestBuild struct {
 }
 
 type ManifestStage struct {
-	Name     string            `yaml:"name,omitempty" json:"name,omitempty"`
-	Image    string            `yaml:"image,omitempty" json:"image,omitempty"`
-	Env      map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
-	Commands []string          `yaml:"commands,omitempty" json:"commands,omitempty"`
+	Name       string            `yaml:"name,omitempty" json:"name,omitempty"`
+	Image      string            `yaml:"image,omitempty" json:"image,omitempty"`
+	Privileged bool              `yaml:"privileged,omitempty" json:"privileged,omitempty"`
+	Mounts     []string          `yaml:"mounts,omitempty" json:"mounts,omitempty"`
+	Env        map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
+	Commands   []string          `yaml:"commands,omitempty" json:"commands,omitempty"`
 }
 
 func (m *Manifest) Validate() error {

@@ -1,0 +1,17 @@
+build:
+  stages:
+  - name: audit
+    image: node:16-alpine
+    commands:
+    - npm audit
+  - name: restore
+    image: node:16-alpine
+    commands:
+    - npm ci
+  - name: bake
+    image: docker:20
+    privileged: true
+    mounts:
+    - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+    - docker build -t web:local .

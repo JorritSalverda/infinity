@@ -98,7 +98,7 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 	for _, stage := range manifest.Build.Stages {
 		log.Printf("Running stage %v...\n", stage.Name)
 		// docker run <image> <commands>
-		commandsArg := strings.Join(stage.Commands, "; ")
+		commandsArg := strings.Join(stage.Commands, " ; ")
 
 		dockerCommand := "docker"
 		dockerRunArgs := []string{
@@ -108,13 +108,19 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 			"--workdir=/work",
 			"--entrypoint=/bin/sh",
 		}
+		for _, m := range stage.Mounts {
+			dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", m))
+		}
 		for k, v := range stage.Env {
 			dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--env=%v=%v", k, v))
+		}
+		if stage.Privileged {
+			dockerRunArgs = append(dockerRunArgs, "--privileged")
 		}
 		dockerRunArgs = append(dockerRunArgs, []string{
 			stage.Image,
 			"-c",
-			fmt.Sprintf("set -e; %v", commandsArg),
+			fmt.Sprintf("set -e ; %v", commandsArg),
 		}...)
 
 		log.Printf("> %v %v\n", dockerCommand, strings.Join(dockerRunArgs, " "))
