@@ -34,25 +34,25 @@ go install github.com/JorritSalverda/infinity
 
 ## Scaffolding a new application build manifest
 
-In order to create a `.infinity.yaml` build template run the following:
+In order to create an `.infinity.yaml` build template run the following:
 
 ```
 infinity scaffold [template name] [application name]
 ```
 
-This could be use like:
+This could be used like:
 
 ```
 infinity scaffold golang myapp
 ```
 
-After running this a `.infinity.yaml` manifest will be generated in the current working directory.
+After running this the manifest will be generated in the current working directory.
 
 You can find a number of templates at https://github.com/JorritSalverda/infinity/tree/main/templates.
 
 ## Validate a application build manifest
 
-Once a `.infinity.yaml` manifest exist in the current directory it can be validated with:
+Once an `.infinity.yaml` manifest exist in the current directory it can be validated with:
 
 ```
 infinity validate
@@ -66,7 +66,7 @@ The build stages in the `.infinity.yaml` manifest can be executed with:
 infinity build
 ```
 
-This will run each stage in a docker container into which the current directory gets mounted, so you can build, test and release your applications in a repeatable fashion.
+This will run each stage's commands inside a docker container into which the current directory gets mounted, so you can build, test and release your applications in a repeatable fashion.
 
 Having a pipeline as code gives control over build time dependency to the authors of the application.
 
@@ -92,3 +92,30 @@ build:
 When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output looks as follows:
 
 ![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.png?raw=true)
+
+### Mounts and privileged mode
+
+To run some more advanced use cases you can set `privileged: true` on a stage, and multiple mounts. This allows you for example to let _infinity_ build a dockerfile in the following manner:
+
+```yaml
+  - name: bake
+    image: docker:20.10.7
+    privileged: true
+    mounts:
+    - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+    - docker build -t web:local .
+```
+
+You can also use it to mount devices and in that way allow stages to control some connected hardware:
+
+```yaml
+  - name: test
+    image: alpine:3.13
+    privileged: true
+    mounts:
+    - /dev/ttyUSB0:/dev/ttyUSB0
+    commands:
+    # this runs forever, but shows serial usb port output
+    - cat /dev/ttyUSB0
+```
