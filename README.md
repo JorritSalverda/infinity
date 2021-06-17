@@ -64,7 +64,7 @@ This will run each stage in a docker container into which the current directory 
 
 Having a pipeline as code gives control over build time dependency to the authors of the application.
 
-A `.infinity.yaml` manifest could look as follows:
+An `.infinity.yaml` manifest looks as follows:
 
 ```yaml
 build:
@@ -83,6 +83,6 @@ build:
     - npm ci
 ```
 
-When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The ouutput would look as follows:
+When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output would look as follows:
 
 ![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.png?raw=true)
