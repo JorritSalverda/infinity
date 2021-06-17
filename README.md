@@ -1,6 +1,6 @@
 # Infinity
 
-Infinity is a CLI to easily build your applications using a pipeline as code
+Infinity is a CLI to easily build your applications using a pipeline as code. It uses an `.infinity.yaml` manifest inside a code repository that specifies the build time dependencies and commands to execute. The __infinity__ tool can execute this manifest locally, so you can build an application without needing all build time dependencies on your machine, only `docker` and `infinity`.
 
 # Install
 
@@ -10,6 +10,12 @@ First install Homebrew:
 
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+And docker:
+
+```
+brew install --cask docker
 ```
 
 Then install the `infinity` cli with
@@ -83,6 +89,6 @@ build:
     - npm ci
 ```
 
-When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output would look as follows:
+When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output looks as follows:
 
 ![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.png?raw=true)
