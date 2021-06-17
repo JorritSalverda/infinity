@@ -1,0 +1,12 @@
+build:
+  stages:
+  - name: test
+    image: golang:1.16-alpine
+    commands:
+    - go test -short ./...
+  - name: build
+    image: golang:1.16-alpine
+    env:
+      CGO_ENABLED: 0
+    commands:
+    - go build -a -installsuffix cgo .
