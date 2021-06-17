@@ -89,18 +89,36 @@ func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error
 }
 
 func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error) {
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
+
 	for _, stage := range manifest.Build.Stages {
+		log.Printf("Running stage %v...\n", stage.Name)
 		// docker run <image> <commands>
 		commandsArg := strings.Join(stage.Commands, "; ")
-		err = b.runCommand(ctx, "docker", []string{
+
+		dockerCommand := "docker"
+		dockerRunArgs := []string{
 			"run",
 			"--rm",
-			"--volume=/work",
+			fmt.Sprintf("--volume=%v:/work", pwd),
 			"--workdir=/work",
 			"--entrypoint=/bin/sh",
+		}
+		for k, v := range stage.Env {
+			dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--env=%v=%v", k, v))
+		}
+		dockerRunArgs = append(dockerRunArgs, []string{
 			stage.Image,
-			fmt.Sprintf("-c set -e; %v", commandsArg),
-		})
+			"-c",
+			fmt.Sprintf("set -e; %v", commandsArg),
+		}...)
+
+		log.Printf("> %v %v\n", dockerCommand, strings.Join(dockerRunArgs, " "))
+		err = b.runCommand(ctx, dockerCommand, dockerRunArgs)
 		if err != nil {
 			return fmt.Errorf("Stage %v failed: %w", stage.Name, err)
 		}

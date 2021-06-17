@@ -1,7 +1,13 @@
 build:
   stages:
+  - name: ls
+    image: golang:1.16-alpine
+    commands:
+    - ls -latr
   - name: test
     image: golang:1.16-alpine
+    env:
+      CGO_ENABLED: 0
     commands:
     - go test -short ./...
   - name: build
