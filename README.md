@@ -61,3 +61,5 @@ infinity build
 ```
 
 This will run each stage in a docker container into which the current directory gets mounted, so you can build, test and release your applications in a repeatable fashion.
+
+![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.png?raw=true)
