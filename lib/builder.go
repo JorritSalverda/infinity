@@ -22,19 +22,19 @@ type Builder interface {
 }
 
 type builder struct {
-	manifestPath string
-	verbose      bool
+	verbose               bool
+	buildManifestFilename string
 }
 
-func NewBuilder(verbose bool) Builder {
+func NewBuilder(verbose bool, buildManifestFilename string) Builder {
 	return &builder{
-		manifestPath: ".infinity.yaml",
-		verbose:      verbose,
+		buildManifestFilename: buildManifestFilename,
+		verbose:               verbose,
 	}
 }
 
 func (b *builder) Validate(ctx context.Context) (err error) {
-	log.Printf("Validating manifest %v...\n", b.manifestPath)
+	log.Printf("Validating manifest %v...\n", b.buildManifestFilename)
 
 	manifest, err := b.getManifest(ctx)
 	if err != nil {
@@ -52,7 +52,7 @@ func (b *builder) Validate(ctx context.Context) (err error) {
 }
 
 func (b *builder) Build(ctx context.Context) (err error) {
-	log.Printf("Building manifest %v...\n", b.manifestPath)
+	log.Printf("Building manifest %v...\n", b.buildManifestFilename)
 
 	manifest, err := b.getManifest(ctx)
 	if err != nil {
@@ -76,19 +76,19 @@ func (b *builder) Build(ctx context.Context) (err error) {
 
 func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error) {
 	// check if manifest exists
-	if _, err = os.Stat(b.manifestPath); os.IsNotExist(err) {
-		return manifest, fmt.Errorf("Manifest %v does not exist, cannot continue", b.manifestPath)
+	if _, err = os.Stat(b.buildManifestFilename); os.IsNotExist(err) {
+		return manifest, fmt.Errorf("Manifest %v does not exist, cannot continue", b.buildManifestFilename)
 	}
 
 	// read manifest
-	manifestBytes, err := ioutil.ReadFile(".infinity.yaml")
+	manifestBytes, err := ioutil.ReadFile(b.buildManifestFilename)
 	if err != nil {
 		return
 	}
 
 	// unmarshal bytes into manifest
 	if err = yaml.UnmarshalStrict(manifestBytes, &manifest); err != nil {
-		return manifest, fmt.Errorf("Manifest %v is not valid: %w", b.manifestPath, err)
+		return manifest, fmt.Errorf("Manifest %v is not valid: %w", b.buildManifestFilename, err)
 	}
 
 	return

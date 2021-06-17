@@ -10,7 +10,7 @@ import (
 
 func TestUnmarshalManifest(t *testing.T) {
 	t.Run("Succeeds", func(t *testing.T) {
-		manifestData, err := ioutil.ReadFile(".infinity.yaml")
+		manifestData, err := ioutil.ReadFile(".infinity-test.yaml")
 		assert.Nil(t, err)
 		var manifest Manifest
 

@@ -4,12 +4,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "infinity",
-	Short: "Infinity is a CLI to easily build your applications using a pipeline as code",
-}
-
-var verbose bool
+var (
+	rootCmd = &cobra.Command{
+		Use:   "infinity",
+		Short: "Infinity is a CLI to easily build your applications using a pipeline as code",
+	}
+	verboseFlag               bool
+	buildManifestFilenameFlag string
+)
 
 // Execute executes the root command.
 func Execute() error {
@@ -17,7 +19,8 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+	rootCmd.PersistentFlags().BoolVarP(&verboseFlag, "verbose", "v", false, "Enable verbose logging")
+	rootCmd.PersistentFlags().StringVarP(&buildManifestFilenameFlag, "manifest", "m", ".infinity.yaml", "Manifest file name")
 
 	rootCmd.AddCommand(scaffoldCmd)
 	rootCmd.AddCommand(validateCmd)
