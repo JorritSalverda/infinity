@@ -5,8 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"text/template"
+
+	"github.com/logrusorgru/aurora"
 )
 
 type Scaffolder interface {
@@ -48,6 +51,11 @@ func (s *scaffolder) Scaffold(ctx context.Context, templateName, applicationName
 		return err
 	}
 	templateString := buf.String()
+
+	if s.verbose {
+		log.Println(aurora.BrightBlue(templateURL))
+		log.Println(templateString)
+	}
 
 	// render template as gotemplate
 	data := struct {

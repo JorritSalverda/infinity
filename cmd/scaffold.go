@@ -19,5 +19,5 @@ var (
 )
 
 func init() {
-	scaffoldCmd.Flags().StringVarP(&templateBaseURLFlag, "url", "u", "https://github.com/JorritSalverda/infinity/blob/main/templates/", "Remote base url from where to fetch templates")
+	scaffoldCmd.Flags().StringVarP(&templateBaseURLFlag, "url", "u", "https://raw.githubusercontent.com/JorritSalverda/infinity/main/templates/", "Remote base url from where to fetch templates")
 }
