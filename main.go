@@ -8,5 +8,7 @@ import (
 
 func main() {
 	log.SetFlags(0)
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }

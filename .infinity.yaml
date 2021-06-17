@@ -1,9 +1,9 @@
 build:
   stages:
-  - name: ls
-    image: golang:1.16-alpine
+  - name: lint
+    image: golangci/golangci-lint:latest-alpine
     commands:
-    - ls -latr
+    - golangci-lint run
   - name: test
     image: golang:1.16-alpine
     env:

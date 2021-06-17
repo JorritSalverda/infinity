@@ -89,45 +89,52 @@ func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error
 }
 
 func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error) {
+	for _, stage := range manifest.Build.Stages {
+		err = b.runStage(ctx, stage)
+		if err != nil {
+			return
+		}
+	}
 
+	return nil
+}
+
+func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		return
 	}
 
-	for _, stage := range manifest.Build.Stages {
-		log.Printf("Running stage %v...\n", stage.Name)
-		// docker run <image> <commands>
-		commandsArg := strings.Join(stage.Commands, " ; ")
+	log.Printf("Running stage %v...\n", stage.Name)
 
-		dockerCommand := "docker"
-		dockerRunArgs := []string{
-			"run",
-			"--rm",
-			fmt.Sprintf("--volume=%v:/work", pwd),
-			"--workdir=/work",
-			"--entrypoint=/bin/sh",
-		}
-		for _, m := range stage.Mounts {
-			dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", m))
-		}
-		for k, v := range stage.Env {
-			dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--env=%v=%v", k, v))
-		}
-		if stage.Privileged {
-			dockerRunArgs = append(dockerRunArgs, "--privileged")
-		}
-		dockerRunArgs = append(dockerRunArgs, []string{
-			stage.Image,
-			"-c",
-			fmt.Sprintf("set -e ; %v", commandsArg),
-		}...)
+	// docker run <image> <commands>
+	dockerCommand := "docker"
+	dockerRunArgs := []string{
+		"run",
+		"--rm",
+		fmt.Sprintf("--volume=%v:/work", pwd),
+		"--workdir=/work",
+		"--entrypoint=/bin/sh",
+	}
+	for _, m := range stage.Mounts {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", m))
+	}
+	for k, v := range stage.Env {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--env=%v=%v", k, v))
+	}
+	if stage.Privileged {
+		dockerRunArgs = append(dockerRunArgs, "--privileged")
+	}
+	dockerRunArgs = append(dockerRunArgs, []string{
+		stage.Image,
+		"-c",
+		fmt.Sprintf("set -e ; %v", strings.Join(stage.Commands, " ; ")),
+	}...)
 
-		log.Printf("> %v %v\n", dockerCommand, strings.Join(dockerRunArgs, " "))
-		err = b.runCommand(ctx, dockerCommand, dockerRunArgs)
-		if err != nil {
-			return fmt.Errorf("Stage %v failed: %w", stage.Name, err)
-		}
+	log.Printf("> %v %v\n", dockerCommand, strings.Join(dockerRunArgs, " "))
+	err = b.runCommand(ctx, dockerCommand, dockerRunArgs)
+	if err != nil {
+		return fmt.Errorf("Stage %v failed: %w", stage.Name, err)
 	}
 
 	return nil
@@ -139,7 +146,5 @@ func (b *builder) runCommand(ctx context.Context, command string, args []string)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-
-	return err
+	return cmd.Run()
 }
