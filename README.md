@@ -62,4 +62,27 @@ infinity build
 
 This will run each stage in a docker container into which the current directory gets mounted, so you can build, test and release your applications in a repeatable fashion.
 
+Having a pipeline as code gives control over build time dependency to the authors of the application.
+
+A `.infinity.yaml` manifest could look as follows:
+
+```yaml
+build:
+  stages:
+  - name: audit
+    image: node:16-alpine
+    env:
+      npm_config_update-notifier: false
+    commands:
+    - npm audit
+  - name: restore
+    image: node:16-alpine
+    env:
+      npm_config_update-notifier: false
+    commands:
+    - npm ci
+```
+
+When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The ouutput would look as follows:
+
 ![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.png?raw=true)
