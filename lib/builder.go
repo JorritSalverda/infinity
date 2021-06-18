@@ -93,13 +93,15 @@ func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error
 		return manifest, fmt.Errorf("Manifest %v is not valid: %w", b.buildManifestFilename, err)
 	}
 
+	manifest.SetDefault()
+
 	return
 }
 
 func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error) {
 	log.Println("")
 	for _, stage := range manifest.Build.Stages {
-		err = b.runStage(ctx, stage)
+		err = b.runStage(ctx, *stage)
 		log.Println("")
 		if err != nil {
 			return
@@ -180,10 +182,13 @@ func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage Manif
 		"--rm",
 		fmt.Sprintf("--volume=%v:/work", pwd),
 		"--workdir=/work",
-		"--entrypoint=/bin/sh",
+		fmt.Sprintf("--entrypoint=%v", stage.Shell),
 	}
 	for _, m := range stage.Mounts {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", m))
+	}
+	for _, d := range stage.Devices {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--device=%v", d))
 	}
 	for k, v := range stage.Env {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--env=%v=%v", k, v))
