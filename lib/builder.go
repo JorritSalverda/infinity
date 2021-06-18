@@ -166,7 +166,9 @@ func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage Manif
 		return
 	}
 
-	commandsArg := []string{}
+	commandsArg := []string{
+		"set -e",
+	}
 	for _, c := range stage.Commands {
 		commandsArg = append(commandsArg, fmt.Sprintf(`echo -e "\x1b[38;5;244m> %v\x1b[0m"`, c))
 		commandsArg = append(commandsArg, c)
@@ -192,7 +194,7 @@ func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage Manif
 	dockerRunArgs = append(dockerRunArgs, []string{
 		stage.Image,
 		"-c",
-		fmt.Sprintf("set -e ; %v", strings.Join(commandsArg, " ; ")),
+		strings.Join(commandsArg, " ; "),
 	}...)
 
 	if b.verbose {
