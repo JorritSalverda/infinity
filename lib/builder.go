@@ -224,30 +224,24 @@ func (b *builder) runCommandWithLogger(ctx context.Context, logger *log.Logger, 
 	if err != nil {
 		return err
 	}
-
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err
 	}
 
-	// start the command after having set up the pipe
+	// start container
 	if err = cmd.Start(); err != nil {
 		return
 	}
 
+	// tail logs with custom logger
 	multi := io.MultiReader(stdout, stderr)
-
-	// read command's output line by line
-	in := bufio.NewScanner(multi)
-
-	for in.Scan() {
-		logger.Printf(in.Text())
+	scanner := bufio.NewScanner(multi)
+	for scanner.Scan() {
+		logger.Printf(scanner.Text())
 	}
 
-	if err = in.Err(); err != nil {
-		return
-	}
-
+	// wait until the container is done
 	if err = cmd.Wait(); err != nil {
 		return
 	}
