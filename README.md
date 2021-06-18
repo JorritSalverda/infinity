@@ -107,6 +107,18 @@ To run some more advanced use cases you can set `privileged: true` on a stage, a
     - docker build -t web:local .
 ```
 
+With this example the `docker build` command actually uses your hosts Docker daemon. In order to build the container in isolation you can use
+
+```yaml
+  - name: bake
+    image: docker:20.10.7-dind
+    privileged: true
+    commands:
+    - ( dockerd-entrypoint.sh & )
+    - ( while true ; do if [ -S /var/run/docker.sock ] ; then break ; fi ; sleep 3 ; done )
+    - docker build -t web:local .
+```
+
 You can also use it to mount devices and in that way allow stages to control some connected hardware:
 
 ```yaml
