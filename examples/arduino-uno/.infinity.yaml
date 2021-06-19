@@ -1,18 +1,13 @@
 build:
   stages:
   - name: upload
-    image: debian:buster-slim
-    env:
-      BINDIR: /usr/local/bin
+    image: jsalverda/arduino-cli:0.18.3
     privileged: true
     devices:
     - /dev/cu.usbserial-1460:/dev/cu.usbserial-1460
     shell: /bin/bash
     commands:
-    - apt-get update
-    - apt-get install -y curl
-    - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.18.3
-    - arduino-cli core install arduino:avr
     - arduino-cli board list
-    - arduino-cli compile -b arduino:avr:uno sketches/blink
-    - arduino-cli upload -b arduino:avr:uno -p /dev/cu.usbserial-1460 sketches/blink
+    - arduino-cli core list
+    # - arduino-cli compile -b arduino:avr:uno sketches/blink
+    # - arduino-cli upload -b arduino:avr:uno -p /dev/cu.usbserial-1460 sketches/blink
