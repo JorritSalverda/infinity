@@ -188,4 +188,4 @@ rm -rf infinity-${INFINITY_VERSION}-darwin-amd64
 shasum -a 256 infinity-${INFINITY_VERSION}-darwin-amd64.zip
 ```
 
-Then create a release with the version as tag and release title and add the zip file as attached file. Then update `url`, `sha256`, `version` and `install` in the `Formula/infinity.rb` file in repository `github.com/JorritSalverda/homebrew-core`. Once it's pushed to Github you can run `brew upgrade` to get the latest version on your machine.
+Then create a release with the version as tag and release title and add the zip file as attached file. Then update `url`, `sha256`, `version` and `install` in the `Formula/infinity.rb` file in repository [github.com/JorritSalverda/homebrew-core](https://github.com/JorritSalverda/homebrew-core). Once it's pushed to Github you can run `brew upgrade` to get the latest version on your machine.
