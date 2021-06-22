@@ -1,3 +1,6 @@
+type: cli
+language: go
+
 build:
   stages:
   - name: parallel

@@ -40,7 +40,7 @@ func (s *scaffolder) Scaffold(ctx context.Context, templateName, applicationName
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Template url %v returned invalid status code %v", templateURL, resp.StatusCode)
+		return fmt.Errorf("template url %v returned invalid status code %v", templateURL, resp.StatusCode)
 	}
 	defer resp.Body.Close()
 

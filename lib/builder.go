@@ -55,7 +55,7 @@ func (b *builder) Validate(ctx context.Context) (manifest Manifest, err error) {
 		for _, e := range errors {
 			log.Println(aurora.BrightRed(e))
 		}
-		return manifest, fmt.Errorf("Manifest failed validation")
+		return manifest, fmt.Errorf("manifest failed validation")
 	}
 
 	log.Println("Manifest is valid!")
@@ -64,7 +64,6 @@ func (b *builder) Validate(ctx context.Context) (manifest Manifest, err error) {
 }
 
 func (b *builder) Build(ctx context.Context) (err error) {
-
 	manifest, err := b.Validate(ctx)
 	if err != nil {
 		return
@@ -76,11 +75,11 @@ func (b *builder) Build(ctx context.Context) (err error) {
 	err = b.runManifest(ctx, manifest)
 	elapsed := time.Since(start)
 	if err != nil {
-		log.Printf("Build failed in %v", aurora.BrightRed(elapsed.String()))
+		log.Printf("Build failed in %v\n", aurora.BrightRed(elapsed.String()))
 		return
 	}
 
-	log.Printf("Build succeeded %v", aurora.BrightGreen(elapsed.String()))
+	log.Printf("Build succeeded %v\n", aurora.BrightGreen(elapsed.String()))
 
 	return nil
 }
@@ -88,7 +87,7 @@ func (b *builder) Build(ctx context.Context) (err error) {
 func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error) {
 	// check if manifest exists
 	if _, err = os.Stat(b.buildManifestFilename); os.IsNotExist(err) {
-		return manifest, fmt.Errorf("Manifest %v does not exist, cannot continue", b.buildManifestFilename)
+		return manifest, fmt.Errorf("manifest %v does not exist, cannot continue", b.buildManifestFilename)
 	}
 
 	// read manifest
@@ -99,7 +98,7 @@ func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error
 
 	// unmarshal bytes into manifest
 	if err = yaml.UnmarshalStrict(manifestBytes, &manifest); err != nil {
-		return manifest, fmt.Errorf("Manifest %v is not valid: %w", b.buildManifestFilename, err)
+		return manifest, fmt.Errorf("manifest %v is invalid: %w", b.buildManifestFilename, err)
 	}
 
 	manifest.SetDefault()
@@ -127,23 +126,21 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 		return b.runParallelStages(ctx, stage)
 	}
 
-	if stage.BareMetal {
-		return b.bareMetalRun(ctx, logger, stage)
+	switch stage.RunnerType {
+	case RunnerContainer:
+		// docker pull <image>
+		err = b.containerPull(ctx, logger, stage)
+		if err != nil {
+			return
+		}
+
+		// docker run <image> <commands>
+		return b.containerRun(ctx, logger, stage)
+	case RunnerMetal:
+		return b.metalRun(ctx, logger, stage)
 	}
 
-	// docker pull <image>
-	err = b.dockerPull(ctx, logger, stage)
-	if err != nil {
-		return
-	}
-
-	// docker run <image> <commands>
-	err = b.dockerRun(ctx, logger, stage)
-	if err != nil {
-		return
-	}
-
-	return nil
+	return fmt.Errorf("runner %v is not supported", stage.RunnerType)
 }
 
 func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (err error) {
@@ -170,8 +167,7 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (e
 	return nil
 }
 
-func (b *builder) dockerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
-
+func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
 	if _, ok := b.pulledImages[stage.Image]; ok {
 		logger.Printf(aurora.Gray(12, "Already pulled image %v").String(), aurora.BrightBlue(stage.Image))
 		return
@@ -194,7 +190,7 @@ func (b *builder) dockerPull(ctx context.Context, logger *log.Logger, stage Mani
 
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed pulling in %v").String(), aurora.BrightRed(elapsed.String()))
-		return fmt.Errorf("Pulling image %v for stage %v failed: %w", stage.Image, stage.Name, err)
+		return fmt.Errorf("pulling image %v for stage %v failed: %w", stage.Image, stage.Name, err)
 	}
 	logger.Printf(aurora.Gray(12, "Pulled in %v").String(), aurora.BrightGreen(elapsed.String()))
 
@@ -203,7 +199,7 @@ func (b *builder) dockerPull(ctx context.Context, logger *log.Logger, stage Mani
 	return nil
 }
 
-func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		return
@@ -213,7 +209,7 @@ func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage Manif
 		"set -e",
 	}
 	for _, c := range stage.Commands {
-		commandsArg = append(commandsArg, fmt.Sprintf(`echo -e "\x1b[38;5;244m> %v\x1b[0m"`, c))
+		commandsArg = append(commandsArg, fmt.Sprintf(`printf "\033[38;5;244m> %v\033[0m\n"`, c))
 		commandsArg = append(commandsArg, c)
 	}
 
@@ -223,7 +219,7 @@ func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage Manif
 		"--rm",
 		fmt.Sprintf("--volume=%v:/work", pwd),
 		"--workdir=/work",
-		fmt.Sprintf("--entrypoint=%v", stage.Shell),
+		fmt.Sprintf("--entrypoint=%v", "/bin/sh"),
 	}
 	for _, m := range stage.Mounts {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", m))
@@ -255,26 +251,23 @@ func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage Manif
 
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
-		return fmt.Errorf("Stage %v failed: %w", stage.Name, err)
+		return fmt.Errorf("stage %v failed: %w", stage.Name, err)
 	}
 	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
 
 	return nil
 }
 
-func (b *builder) bareMetalRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
-
+func (b *builder) metalRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
 	logger.Printf(aurora.Gray(12, "Executing commands in bare metal mode").String())
 
 	start := time.Now()
 
 	for _, c := range stage.Commands {
-		err = b.runCommandWithLogger(ctx, logger, stage.Shell, []string{"-c", fmt.Sprintf(`echo "\x1b[38;5;244m> %v\x1b[0m"`, c)})
-		if err != nil {
-			break
-		}
+		logger.Printf(aurora.Gray(12, "> %v").String(), c)
 
-		err = b.runCommandWithLogger(ctx, logger, stage.Shell, []string{"-c", c})
+		splitCommands := strings.Split(c, " ")
+		err = b.runCommandWithLogger(ctx, logger, splitCommands[0], splitCommands[1:])
 		if err != nil {
 			break
 		}
@@ -284,7 +277,7 @@ func (b *builder) bareMetalRun(ctx context.Context, logger *log.Logger, stage Ma
 
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
-		return fmt.Errorf("Stage %v failed: %w", stage.Name, err)
+		return fmt.Errorf("stage %v failed: %w", stage.Name, err)
 	}
 	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
 

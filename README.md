@@ -91,7 +91,7 @@ build:
 
 When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output looks as follows:
 
-![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.png?raw=true)
+![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.pjg?raw=true)
 
 ### Mounts and privileged mode
 
@@ -132,13 +132,13 @@ You can also use it to mount devices and in that way allow stages to control som
     - cat /dev/ttyUSB0
 ```
 
-### Bare metal
+### Bare metal runner
 
-In the exceptional case that a command can't run inside a Docker container a stage can be run with `bareMetal: true`; this runs the specified commands directly on the host operating system. The drawback of using this mode is that the build time dependencies either need to be preinstalled or get installed using the commands, leaving them behind on the host.
+In the exceptional case that a command can't run inside a Docker container a stage can be run with `runner: metal`; this runs the specified commands directly on the host operating system. The drawback of using this mode is that the build time dependencies either need to be preinstalled or get installed using the commands, leaving them behind on the host.
 
 ```yaml
   - name: upload
-    bareMetal: true
+    runner: metal
     commands:
     - apt-get update && apt-get install -y curl
     - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.18.3
@@ -154,7 +154,7 @@ In the exceptional case that a command can't run inside a Docker container a sta
 Regular stages run sequentially, but in order to speed up things you can run stages in parallel by nesting them inside a named containing stage:
 
 ```yaml
-  - name: parallel
+  - name: build-and-lint
     stages:
     - name: lint
       image: golangci/golangci-lint:latest-alpine

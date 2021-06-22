@@ -5,7 +5,9 @@ import (
 )
 
 type Manifest struct {
-	Build ManifestBuild `yaml:"build,omitempty" json:"build,omitempty"`
+	ApplicationType ApplicationType `yaml:"type,omitempty" json:"type,omitempty"`
+	Language        Language        `yaml:"language,omitempty" json:"language,omitempty"`
+	Build           ManifestBuild   `yaml:"build,omitempty" json:"build,omitempty"`
 }
 
 func (m *Manifest) SetDefault() {
@@ -13,6 +15,13 @@ func (m *Manifest) SetDefault() {
 }
 
 func (m *Manifest) Validate() (warnings []string, errors []error) {
+	if m.ApplicationType == ApplicationTypeUnknown {
+		errors = append(errors, fmt.Errorf("application is unknown; set to a supported application type with 'application: <application>'"))
+	}
+	if m.Language == LanguageUnknown {
+		errors = append(errors, fmt.Errorf("language is unknown; set to a supported language with 'language: <language>'"))
+	}
+
 	w, e := m.Build.Validate()
 	warnings = append(warnings, w...)
 	errors = append(errors, e...)
@@ -32,7 +41,7 @@ func (b *ManifestBuild) SetDefault() {
 
 func (b *ManifestBuild) Validate() (warnings []string, errors []error) {
 	if len(b.Stages) == 0 {
-		errors = append(errors, fmt.Errorf("Manifest has no stages; define at least stage through 'build.stages'"))
+		errors = append(errors, fmt.Errorf("manifest has no stages; define at least stage through 'build.stages'"))
 	}
 
 	for _, s := range b.Stages {
@@ -46,9 +55,9 @@ func (b *ManifestBuild) Validate() (warnings []string, errors []error) {
 
 type ManifestStage struct {
 	Name       string            `yaml:"name,omitempty" json:"name,omitempty"`
+	RunnerType RunnerType        `yaml:"runner,omitempty" json:"runner,omitempty"`
 	Image      string            `yaml:"image,omitempty" json:"image,omitempty"`
-	BareMetal  bool              `yaml:"bareMetal,omitempty" json:"bareMetal,omitempty"`
-	Shell      string            `yaml:"shell,omitempty" json:"shell,omitempty"`
+	Detach     bool              `yaml:"detach,omitempty" json:"detach,omitempty"`
 	Privileged bool              `yaml:"privileged,omitempty" json:"privileged,omitempty"`
 	Mounts     []string          `yaml:"mounts,omitempty" json:"mounts,omitempty"`
 	Devices    []string          `yaml:"devices,omitempty" json:"devices,omitempty"`
@@ -58,10 +67,9 @@ type ManifestStage struct {
 }
 
 func (s *ManifestStage) SetDefault() {
-	if s.Shell == "" {
-		s.Shell = "/bin/sh"
+	if s.RunnerType == RunnerUnknown {
+		s.RunnerType = RunnerContainer
 	}
-
 	for _, st := range s.Stages {
 		st.SetDefault()
 	}
@@ -69,19 +77,25 @@ func (s *ManifestStage) SetDefault() {
 
 func (s *ManifestStage) Validate() (warnings []string, errors []error) {
 	if s.Name == "" {
-		errors = append(errors, fmt.Errorf("Stage has no name; please set 'name: <name>'"))
+		errors = append(errors, fmt.Errorf("stage has no name; please set 'name: <name>'"))
 	}
-	if len(s.Stages) == 0 && !s.BareMetal && s.Image == "" {
-		errors = append(errors, fmt.Errorf("Stage has no image; please set 'image: <image>'"))
+	if s.RunnerType == RunnerUnknown {
+		errors = append(errors, fmt.Errorf("unknown runner; please set 'runner: container|metal'"))
 	}
-	if len(s.Stages) == 0 && s.BareMetal && s.Image != "" {
-		errors = append(errors, fmt.Errorf("Stage has image while bareMetal is set to true; please do not set 'image: <image>'"))
+
+	switch s.RunnerType {
+	case RunnerContainer:
+		if len(s.Stages) == 0 && s.Image == "" {
+			errors = append(errors, fmt.Errorf("stage has no image; please set 'image: <image>'"))
+		}
+	case RunnerMetal:
+		if len(s.Stages) == 0 && s.Image != "" {
+			errors = append(errors, fmt.Errorf("stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'"))
+		}
 	}
-	if len(s.Stages) == 0 && s.Shell == "" {
-		errors = append(errors, fmt.Errorf("Stage has no shell; please set 'shell: <shell>'"))
-	}
+
 	if len(s.Stages) == 0 && len(s.Commands) == 0 {
-		errors = append(errors, fmt.Errorf("Stage has no commands; define at least stage through 'commands'"))
+		errors = append(errors, fmt.Errorf("stage has no commands; define at least stage through 'commands'"))
 	}
 
 	for _, st := range s.Stages {
