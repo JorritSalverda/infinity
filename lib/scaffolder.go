@@ -13,7 +13,7 @@ import (
 )
 
 type Scaffolder interface {
-	Scaffold(ctx context.Context, templateName, applicationName string) (err error)
+	Scaffold(ctx context.Context, applicationType ApplicationType, language Language, applicationName string) (err error)
 }
 
 type scaffolder struct {
@@ -30,9 +30,9 @@ func NewScaffolder(verbose bool, buildManifestFilename, templateBaseURL string) 
 	}
 }
 
-func (s *scaffolder) Scaffold(ctx context.Context, templateName, applicationName string) (err error) {
+func (s *scaffolder) Scaffold(ctx context.Context, applicationType ApplicationType, language Language, applicationName string) (err error) {
 
-	templateURL := fmt.Sprintf("%v%v.gotmpl", s.templateBaseURL, templateName)
+	templateURL := fmt.Sprintf("%v%v-%v.gotmpl", s.templateBaseURL, applicationType, language)
 
 	// fetch template
 	resp, err := http.Get(templateURL)

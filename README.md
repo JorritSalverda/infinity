@@ -37,13 +37,13 @@ go install github.com/JorritSalverda/infinity
 In order to create an `.infinity.yaml` build template run the following:
 
 ```
-infinity scaffold [template name] [application name]
+infinity scaffold [application type] [language] [application name]
 ```
 
 This could be used like:
 
 ```
-infinity scaffold golang myapp
+infinity scaffold library golang mylib
 ```
 
 After running this the manifest will be generated in the current working directory.

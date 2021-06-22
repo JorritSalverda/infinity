@@ -1,18 +1,36 @@
 package cmd
 
 import (
+	"encoding/json"
+
 	"github.com/JorritSalverda/infinity/lib"
 	"github.com/spf13/cobra"
 )
 
 var (
 	scaffoldCmd = &cobra.Command{
-		Use:   "scaffold [template name] [application name]",
+		Use:   "scaffold [application type] [language] [application name]",
 		Short: "Scaffold and application build .infinity.yaml manifest",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scaffolder := lib.NewScaffolder(verboseFlag, buildManifestFilenameFlag, templateBaseURLFlag)
-			return scaffolder.Scaffold(cmd.Context(), args[0], args[1])
+
+			// extract arguments
+			var applicationType lib.ApplicationType
+			err := json.Unmarshal([]byte(args[0]), &applicationType)
+			if err != nil {
+				return err
+			}
+
+			var language lib.Language
+			err = json.Unmarshal([]byte(args[1]), &language)
+			if err != nil {
+				return err
+			}
+
+			applicationName := args[2]
+
+			return scaffolder.Scaffold(cmd.Context(), applicationType, language, applicationName)
 		},
 	}
 	templateBaseURLFlag string
