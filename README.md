@@ -50,7 +50,7 @@ After running this the manifest will be generated in the current working directo
 
 You can find a number of templates at https://github.com/JorritSalverda/infinity/tree/main/templates.
 
-## Validate a application build manifest
+## Validate an application build manifest
 
 Once an `.infinity.yaml` manifest exist in the current directory it can be validated with:
 
