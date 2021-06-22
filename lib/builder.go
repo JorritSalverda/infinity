@@ -3,14 +3,12 @@ package lib
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/logrusorgru/aurora"
-	"gopkg.in/yaml.v2"
 )
 
 //go:generate mockgen -package=lib -destination ./builder_mock.go -source=builder.go
@@ -20,6 +18,7 @@ type Builder interface {
 }
 
 type builder struct {
+	manifestReader          ManifestReader
 	commandRunner           CommandRunner
 	verbose                 bool
 	buildManifestFilename   string
@@ -29,8 +28,9 @@ type builder struct {
 	detachedContainersMutex *MapMutex
 }
 
-func NewBuilder(commandRunner CommandRunner, verbose bool, buildManifestFilename string) Builder {
+func NewBuilder(manifestReader ManifestReader, commandRunner CommandRunner, verbose bool, buildManifestFilename string) Builder {
 	return &builder{
+		manifestReader:          manifestReader,
 		commandRunner:           commandRunner,
 		buildManifestFilename:   buildManifestFilename,
 		verbose:                 verbose,
@@ -44,7 +44,7 @@ func NewBuilder(commandRunner CommandRunner, verbose bool, buildManifestFilename
 func (b *builder) Validate(ctx context.Context) (manifest Manifest, err error) {
 	log.Printf("Validating manifest %v", aurora.BrightBlue(b.buildManifestFilename))
 
-	manifest, err = b.getManifest(ctx)
+	manifest, err = b.manifestReader.GetManifest(ctx, b.buildManifestFilename)
 	if err != nil {
 		return
 	}
@@ -88,28 +88,6 @@ func (b *builder) Build(ctx context.Context) (err error) {
 	log.Printf("Build succeeded %v\n", aurora.BrightGreen(elapsed.String()))
 
 	return nil
-}
-
-func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error) {
-	// check if manifest exists
-	if _, err = os.Stat(b.buildManifestFilename); os.IsNotExist(err) {
-		return manifest, fmt.Errorf("manifest %v does not exist, cannot continue", b.buildManifestFilename)
-	}
-
-	// read manifest
-	manifestBytes, err := ioutil.ReadFile(b.buildManifestFilename)
-	if err != nil {
-		return
-	}
-
-	// unmarshal bytes into manifest
-	if err = yaml.UnmarshalStrict(manifestBytes, &manifest); err != nil {
-		return manifest, fmt.Errorf("manifest %v is invalid: %w", b.buildManifestFilename, err)
-	}
-
-	manifest.SetDefault()
-
-	return
 }
 
 func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error) {
