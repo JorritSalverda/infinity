@@ -1,6 +1,6 @@
 # Infinity
 
-Infinity is a CLI to easily build your applications using a _pipeline as code_ approach. It uses an `.infinity.yaml` manifest inside a code repository that specifies the build time dependencies and commands to execute. The _infinity_ tool can execute this manifest locally, so you can build an application without needing all build time dependencies on your machine, only `docker` and `infinity`.
+Infinity is a CLI to easily build your applications using a _pipeline as code_ approach. It uses an `.infinity.yaml` manifest inside a code repository that specifies the build time dependencies and commands to execute. The _infinity_ tool can execute this manifest locally, so you can build an application without needing all build time dependencies on your machine, only `docker` and `infinity`. The same manifest in combination with the _infinity_ cli can be used inside CI pipelines to build the application, so `works on my machine` also means it `works in the CI pipeline`.
 
 # Install
 
