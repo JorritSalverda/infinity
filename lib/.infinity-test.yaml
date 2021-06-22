@@ -1,5 +1,6 @@
 type: cli
 language: go
+name: infinity-test
 
 build:
   stages:

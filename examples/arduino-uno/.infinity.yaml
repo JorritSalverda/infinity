@@ -1,5 +1,6 @@
 type: firmware
 language: c++
+name: hello-arduino
 
 build:
   stages:

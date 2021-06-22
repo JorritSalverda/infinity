@@ -8,6 +8,7 @@ import (
 type Manifest struct {
 	ApplicationType ApplicationType `yaml:"type,omitempty" json:"type,omitempty"`
 	Language        Language        `yaml:"language,omitempty" json:"language,omitempty"`
+	Name            string          `yaml:"name,omitempty" json:"name,omitempty"`
 	Build           ManifestBuild   `yaml:"build,omitempty" json:"build,omitempty"`
 }
 

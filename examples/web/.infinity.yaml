@@ -1,5 +1,6 @@
 type: web
 language: node
+name: hello-web
 
 build:
   stages:
