@@ -1,13 +1,15 @@
 build:
   stages:
-  - name: lint
-    image: golangci/golangci-lint:latest-alpine
-    commands:
-    - golangci-lint run
-  - name: release
-    image: golang:1.16-alpine
-    env:
-      CGO_ENABLED: 0
-    commands:
-    - go test -short ./...
-    - go build -a -installsuffix cgo .
+  - name: parallel
+    stages:
+    - name: lint
+      image: golangci/golangci-lint:latest-alpine
+      commands:
+      - golangci-lint run
+    - name: release
+      image: golang:1.16-alpine
+      env:
+        CGO_ENABLED: 0
+      commands:
+      - go test -short ./...
+      - go build -a -installsuffix cgo .

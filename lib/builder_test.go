@@ -12,7 +12,7 @@ func TestValidate(t *testing.T) {
 		builder := NewBuilder(false, ".infinity-test.yaml")
 
 		// act
-		err := builder.Validate(context.Background())
+		_, err := builder.Validate(context.Background())
 
 		assert.Nil(t, err)
 	})

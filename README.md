@@ -131,3 +131,42 @@ You can also use it to mount devices and in that way allow stages to control som
     # this runs forever, but shows serial usb port output
     - cat /dev/ttyUSB0
 ```
+
+### Bare metal
+
+In the exceptional case that a command can't run inside a Docker container a stage can be run with `bareMetal: true`; this runs the specified commands directly on the host operating system. The drawback of using this mode is that the build time dependencies either need to be preinstalled or get installed using the commands, leaving them behind on the host.
+
+```yaml
+  - name: upload
+    bareMetal: true
+    commands:
+    - apt-get update && apt-get install -y curl
+    - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.18.3
+    - arduino-cli core install arduino:avr 
+    - arduino-cli board list
+    - arduino-cli core list
+    - arduino-cli compile -b arduino:avr:uno sketches/blink
+    - arduino-cli upload -b arduino:avr:uno -p /dev/cu.usbserial-1460 sketches/blink
+```
+
+### Parallel stages
+
+Regular stages run sequentially, but in order to speed up things you can run stages in parallel by nesting them inside a named containing stage:
+
+```yaml
+  - name: parallel
+    stages:
+    - name: lint
+      image: golangci/golangci-lint:latest-alpine
+      commands:
+      - golangci-lint run
+    - name: release
+      image: golang:1.16-alpine
+      env:
+        CGO_ENABLED: 0
+      commands:
+      - go test -short ./...
+      - go build -a -installsuffix cgo .
+```
+
+Since these stages share the same mounted working directory do ensure they are safe to run concurrently!

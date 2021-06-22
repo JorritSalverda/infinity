@@ -17,7 +17,7 @@ import (
 )
 
 type Builder interface {
-	Validate(ctx context.Context) (err error)
+	Validate(ctx context.Context) (manifest Manifest, err error)
 	Build(ctx context.Context) (err error)
 }
 
@@ -35,43 +35,52 @@ func NewBuilder(verbose bool, buildManifestFilename string) Builder {
 	}
 }
 
-func (b *builder) Validate(ctx context.Context) (err error) {
-	log.Printf("Validating manifest %v\n", aurora.BrightBlue(b.buildManifestFilename))
+func (b *builder) Validate(ctx context.Context) (manifest Manifest, err error) {
+	log.Printf("Validating manifest %v", aurora.BrightBlue(b.buildManifestFilename))
 
-	manifest, err := b.getManifest(ctx)
+	manifest, err = b.getManifest(ctx)
 	if err != nil {
 		return
 	}
 
-	err = manifest.Validate()
-	if err != nil {
-		return
+	warnings, errors := manifest.Validate()
+	if len(warnings) > 0 {
+		log.Println(aurora.BrightYellow("Manifest has warnings:"))
+		for _, w := range warnings {
+			log.Println(aurora.BrightYellow(w))
+		}
+	}
+	if len(errors) > 0 {
+		log.Println(aurora.BrightRed("Manifest has errors:"))
+		for _, e := range errors {
+			log.Println(aurora.BrightRed(e))
+		}
+		return manifest, fmt.Errorf("Manifest failed validation")
 	}
 
 	log.Println("Manifest is valid!")
 
-	return nil
+	return
 }
 
 func (b *builder) Build(ctx context.Context) (err error) {
-	log.Printf("Building manifest %v\n", aurora.BrightBlue(b.buildManifestFilename))
 
-	manifest, err := b.getManifest(ctx)
+	manifest, err := b.Validate(ctx)
 	if err != nil {
 		return
 	}
 
-	err = manifest.Validate()
-	if err != nil {
-		return
-	}
+	log.Printf("Building manifest %v", aurora.BrightBlue(b.buildManifestFilename))
 
+	start := time.Now()
 	err = b.runManifest(ctx, manifest)
+	elapsed := time.Since(start)
 	if err != nil {
+		log.Printf("Build failed in %v", aurora.BrightRed(elapsed.String()))
 		return
 	}
 
-	log.Println("Build succeeded!")
+	log.Printf("Build succeeded %v", aurora.BrightGreen(elapsed.String()))
 
 	return nil
 }
@@ -114,6 +123,14 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error) {
 	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
 
+	if len(stage.Stages) > 0 {
+		return b.runParallelStages(ctx, stage)
+	}
+
+	if stage.BareMetal {
+		return b.bareMetalRun(ctx, logger, stage)
+	}
+
 	// docker pull <image>
 	err = b.dockerPull(ctx, logger, stage)
 	if err != nil {
@@ -124,6 +141,30 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 	err = b.dockerRun(ctx, logger, stage)
 	if err != nil {
 		return
+	}
+
+	return nil
+}
+
+func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (err error) {
+	semaphore := NewSemaphore(len(stage.Stages))
+	errorChannel := make(chan error, len(stage.Stages))
+
+	for _, s := range stage.Stages {
+		semaphore.Acquire()
+		go func(ctx context.Context, s ManifestStage) {
+			defer semaphore.Release()
+			errorChannel <- b.runStage(ctx, s)
+		}(ctx, *s)
+	}
+
+	semaphore.Wait()
+
+	close(errorChannel)
+	for err = range errorChannel {
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -210,6 +251,35 @@ func (b *builder) dockerRun(ctx context.Context, logger *log.Logger, stage Manif
 
 	start := time.Now()
 	err = b.runCommandWithLogger(ctx, logger, dockerCommand, dockerRunArgs)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
+		return fmt.Errorf("Stage %v failed: %w", stage.Name, err)
+	}
+	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
+
+	return nil
+}
+
+func (b *builder) bareMetalRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+
+	logger.Printf(aurora.Gray(12, "Executing commands in bare metal mode").String())
+
+	start := time.Now()
+
+	for _, c := range stage.Commands {
+		err = b.runCommandWithLogger(ctx, logger, stage.Shell, []string{"-c", fmt.Sprintf(`echo "\x1b[38;5;244m> %v\x1b[0m"`, c)})
+		if err != nil {
+			break
+		}
+
+		err = b.runCommandWithLogger(ctx, logger, stage.Shell, []string{"-c", c})
+		if err != nil {
+			break
+		}
+	}
+
 	elapsed := time.Since(start)
 
 	if err != nil {
