@@ -91,7 +91,7 @@ build:
 
 When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output looks as follows:
 
-![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.pjg?raw=true)
+![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.jpg?raw=true)
 
 ### Mounts and privileged mode
 
