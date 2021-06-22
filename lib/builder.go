@@ -22,16 +22,22 @@ type Builder interface {
 }
 
 type builder struct {
-	verbose               bool
-	buildManifestFilename string
-	pulledImages          map[string]struct{}
+	verbose                 bool
+	buildManifestFilename   string
+	pulledImages            map[string]struct{}
+	pulledImagesMutex       *MapMutex
+	detachedContainers      map[*ManifestStage]string
+	detachedContainersMutex *MapMutex
 }
 
 func NewBuilder(verbose bool, buildManifestFilename string) Builder {
 	return &builder{
-		buildManifestFilename: buildManifestFilename,
-		verbose:               verbose,
-		pulledImages:          make(map[string]struct{}),
+		buildManifestFilename:   buildManifestFilename,
+		verbose:                 verbose,
+		pulledImages:            make(map[string]struct{}),
+		pulledImagesMutex:       NewMapMutex(),
+		detachedContainers:      make(map[*ManifestStage]string),
+		detachedContainersMutex: NewMapMutex(),
 	}
 }
 
@@ -108,6 +114,14 @@ func (b *builder) getManifest(ctx context.Context) (manifest Manifest, err error
 
 func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error) {
 	log.Println("")
+
+	defer func() {
+		terminateErr := b.terminateDetachedContainers(ctx)
+		if err == nil {
+			err = terminateErr
+		}
+	}()
+
 	for _, stage := range manifest.Build.Stages {
 		err = b.runStage(ctx, *stage)
 		log.Println("")
@@ -167,7 +181,82 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (e
 	return nil
 }
 
+func (b *builder) terminateDetachedContainers(ctx context.Context) (err error) {
+
+	if len(b.detachedContainers) > 0 {
+		log.Printf("Terminating %v detached stage containers\n\n", len(b.detachedContainers))
+
+		semaphore := NewSemaphore(len(b.detachedContainers))
+		errorChannel := make(chan error, len(b.detachedContainers))
+
+		for stage, containerID := range b.detachedContainers {
+			semaphore.Acquire()
+			go func(ctx context.Context, stage ManifestStage, containerID string) {
+				defer semaphore.Release()
+				errorChannel <- b.terminateDetachedContainer(ctx, stage, containerID)
+			}(ctx, *stage, containerID)
+		}
+
+		semaphore.Wait()
+
+		log.Println("")
+
+		close(errorChannel)
+		for err = range errorChannel {
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+
+}
+
+func (b *builder) terminateDetachedContainer(ctx context.Context, stage ManifestStage, containerID string) (err error) {
+
+	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
+
+	errorChannel := make(chan error)
+
+	go func() {
+		// stop container
+		dockerCommand := "docker"
+		dockerStopArgs := []string{
+			"stop",
+			"--time=30",
+			containerID,
+		}
+		if b.verbose {
+			logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerStopArgs, " "))
+		}
+		errorChannel <- b.runCommandWithLogger(ctx, logger, dockerCommand, dockerStopArgs)
+	}()
+
+	// tail logs
+	dockerCommand := "docker"
+	dockerLogsArgs := []string{
+		"logs",
+		"--follow",
+		containerID,
+	}
+	if b.verbose {
+		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerLogsArgs, " "))
+	}
+
+	err = b.runCommandWithLogger(ctx, logger, dockerCommand, dockerLogsArgs)
+	if err != nil {
+		return
+	}
+
+	return <-errorChannel
+}
+
 func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+
+	b.pulledImagesMutex.Lock(stage.Image)
+	defer b.pulledImagesMutex.Unlock(stage.Image)
+
 	if _, ok := b.pulledImages[stage.Image]; ok {
 		logger.Printf(aurora.Gray(12, "Already pulled image %v").String(), aurora.BrightBlue(stage.Image))
 		return
@@ -205,21 +294,12 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 		return
 	}
 
-	commandsArg := []string{
-		"set -e",
-	}
-	for _, c := range stage.Commands {
-		commandsArg = append(commandsArg, fmt.Sprintf(`printf "\033[38;5;244m> %v\033[0m\n"`, c))
-		commandsArg = append(commandsArg, c)
-	}
-
 	dockerCommand := "docker"
 	dockerRunArgs := []string{
 		"run",
 		"--rm",
 		fmt.Sprintf("--volume=%v:/work", pwd),
 		"--workdir=/work",
-		fmt.Sprintf("--entrypoint=%v", "/bin/sh"),
 	}
 	for _, m := range stage.Mounts {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", m))
@@ -233,14 +313,55 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	if stage.Privileged {
 		dockerRunArgs = append(dockerRunArgs, "--privileged")
 	}
-	dockerRunArgs = append(dockerRunArgs, []string{
-		stage.Image,
-		"-c",
-		strings.Join(commandsArg, " ; "),
-	}...)
+	if stage.Detach {
+		dockerRunArgs = append(dockerRunArgs, "--detach")
+	}
+	if len(stage.Commands) > 0 {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--entrypoint=%v", "/bin/sh"))
+	}
+
+	dockerRunArgs = append(dockerRunArgs, stage.Image)
+
+	if len(stage.Commands) > 0 {
+		commandsArg := []string{}
+		if len(stage.Commands) > 0 {
+			commandsArg = append(commandsArg, "set -e")
+		}
+		for _, c := range stage.Commands {
+			commandsArg = append(commandsArg, fmt.Sprintf(`printf "\033[38;5;244m> %v\033[0m\n"`, c))
+			commandsArg = append(commandsArg, c)
+		}
+		dockerRunArgs = append(dockerRunArgs, []string{
+			"-c",
+			strings.Join(commandsArg, " ; "),
+		}...)
+	}
 
 	if b.verbose {
 		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerRunArgs, " "))
+	}
+
+	if stage.Detach {
+		logger.Printf(aurora.Gray(12, "Starting detached stage").String())
+
+		start := time.Now()
+		containerIDBytes, err := b.runCommandWithOutput(ctx, dockerCommand, dockerRunArgs)
+		elapsed := time.Since(start)
+		if err != nil {
+			logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
+			return err
+		}
+		logger.Printf(aurora.Gray(12, "Started in %v").String(), aurora.BrightGreen(elapsed.String()))
+
+		containerID := string(containerIDBytes)
+		containerID = strings.TrimSuffix(containerID, "\n")
+
+		b.detachedContainersMutex.Lock(stage.Name)
+		defer b.detachedContainersMutex.Unlock(stage.Name)
+
+		b.detachedContainers[&stage] = containerID
+
+		return nil
 	}
 
 	logger.Printf(aurora.Gray(12, "Executing commands").String())
@@ -315,4 +436,11 @@ func (b *builder) runCommandWithLogger(ctx context.Context, logger *log.Logger, 
 	}
 
 	return nil
+}
+
+func (b *builder) runCommandWithOutput(ctx context.Context, command string, args []string) (output []byte, err error) {
+	cmd := exec.CommandContext(ctx, command, args...)
+	cmd.Env = os.Environ()
+
+	return cmd.CombinedOutput()
 }

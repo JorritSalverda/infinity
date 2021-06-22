@@ -171,6 +171,25 @@ Regular stages run sequentially, but in order to speed up things you can run sta
 
 Since these stages share the same mounted working directory do ensure they are safe to run concurrently!
 
+### Detached stages
+
+In order to run containers in the background, for example to be used as a service for in-pipeline integration tests you can add `detach: true` to the stage. It will make the container start and then continue to run until all stages are done. Once they're done the _detached_ stage containers will be terminated and their logs shown.
+
+```yaml
+  - name: cockroachdb-as-service
+    image: cockroachdb/cockroach:v21.1.2
+    detach: true
+    env:
+      COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING: "true"
+    commands:
+    - exec /cockroach/cockroach start-single-node --insecure --advertise-addr cockroachdb-as-service
+  - name: wait
+    image: alpine:3.13
+    commands:
+    # run schema updates and then integration tests against the database
+    - sleep 20s
+```
+
 # Local development
 
 You can either install `infinity` and run `infinity build`; this will compile and install the cli in the go binary folder. Or just run `go install` instead.

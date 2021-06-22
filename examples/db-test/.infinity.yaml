@@ -1,0 +1,17 @@
+type: api
+language: go
+name: api-with-db
+
+build:
+  stages:
+  - name: cockroachdb-as-service
+    image: cockroachdb/cockroach:v21.1.2
+    detach: true
+    env:
+      COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING: "true"
+    commands:
+    - exec /cockroach/cockroach start-single-node --insecure --advertise-addr cockroachdb-as-service
+  - name: wait
+    image: alpine:3.13
+    commands:
+    - sleep 20s

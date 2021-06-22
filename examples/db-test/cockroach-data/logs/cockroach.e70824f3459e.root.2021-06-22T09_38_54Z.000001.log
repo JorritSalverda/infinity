@@ -1,0 +1,146 @@
+I210622 09:38:54.338042 1 util/log/file_sync_buffer.go:238 ⋮ [config]   file created at: 2021/06/22 09:38:54
+I210622 09:38:54.338129 1 util/log/file_sync_buffer.go:238 ⋮ [config]   running on machine: ‹e70824f3459e›
+I210622 09:38:54.338140 1 util/log/file_sync_buffer.go:238 ⋮ [config]   binary: CockroachDB CCL v21.1.2 (x86_64-unknown-linux-gnu, built 2021/06/07 18:09:50, go1.15.11)
+I210622 09:38:54.338146 1 util/log/file_sync_buffer.go:238 ⋮ [config]   arguments: ‹[/cockroach/cockroach start-single-node --insecure --advertise-addr cockroachdb-as-service]›
+I210622 09:38:54.338156 1 util/log/file_sync_buffer.go:238 ⋮ [config]   line format: [IWEF]yymmdd hh:mm:ss.uuuuuu goid file:line msg utf8=✓
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1  ALL SECURITY CONTROLS HAVE BEEN DISABLED!
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +This mode is intended for non-production testing only.
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +In this mode:
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +- Your cluster is open to any client that can access ‹any of your IP addresses›.
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +- Intruders with access to your machine or network can observe client-server traffic.
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +- Intruders can log in without password and read or write any data in the cluster.
+W210622 09:38:54.332712 1 1@cli/start.go:992 ⋮ [-] 1 +- Intruders can consume all your server's resources and cause unavailability.
+I210622 09:38:54.347726 1 1@cli/start.go:1002 ⋮ [-] 2  To start a secure server without mandating TLS for clients,
+I210622 09:38:54.347726 1 1@cli/start.go:1002 ⋮ [-] 2 +consider --accept-sql-without-tls instead. For other options, see:
+I210622 09:38:54.347726 1 1@cli/start.go:1002 ⋮ [-] 2 +
+I210622 09:38:54.347726 1 1@cli/start.go:1002 ⋮ [-] 2 +- ‹https://go.crdb.dev/issue-v/53404/v21.1›
+I210622 09:38:54.347726 1 1@cli/start.go:1002 ⋮ [-] 2 +- https://www.cockroachlabs.com/docs/v21.1/secure-a-cluster.html
+I210622 09:38:54.348624 1 server/status/recorder.go:628 ⋮ [-] 3  ‹available memory from cgroups (8.0 EiB) is unsupported, using system memory 16 GiB instead:›
+W210622 09:38:54.348683 1 1@cli/start.go:958 ⋮ [-] 4  ‹Using the default setting for --cache (128 MiB).›
+W210622 09:38:54.348683 1 1@cli/start.go:958 ⋮ [-] 4 +‹  A significantly larger value is usually needed for good performance.›
+W210622 09:38:54.348683 1 1@cli/start.go:958 ⋮ [-] 4 +‹  If you have a dedicated server a reasonable setting is --cache=.25 (3.9 GiB).›
+I210622 09:38:54.349000 1 server/status/recorder.go:628 ⋮ [-] 5  ‹available memory from cgroups (8.0 EiB) is unsupported, using system memory 16 GiB instead:›
+I210622 09:38:54.349011 1 1@cli/start.go:1031 ⋮ [-] 6  ‹CockroachDB CCL v21.1.2 (x86_64-unknown-linux-gnu, built 2021/06/07 18:09:50, go1.15.11)›
+I210622 09:38:54.366318 1 server/status/recorder.go:628 ⋮ [-] 7  ‹available memory from cgroups (8.0 EiB) is unsupported, using system memory 16 GiB instead:›
+I210622 09:38:54.366438 1 server/config.go:431 ⋮ [-] 8  system total memory: ‹16 GiB›
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9  server configuration:
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9 +‹max offset             500000000›
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9 +‹cache size             128 MiB›
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9 +‹SQL memory pool size   3.9 GiB›
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9 +‹scan interval          10m0s›
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9 +‹scan min idle time     10ms›
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9 +‹scan max idle time     1s›
+I210622 09:38:54.366460 1 server/config.go:433 ⋮ [-] 9 +‹event log enabled      true›
+I210622 09:38:54.366529 1 1@cli/start.go:936 ⋮ [-] 10  using local environment variables: ‹COCKROACH_CHANNEL=official-docker›
+I210622 09:38:54.366606 1 1@cli/start.go:943 ⋮ [-] 11  process identity: ‹uid 0 euid 0 gid 0 egid 0›
+I210622 09:38:54.372017 1 1@cli/start.go:1111 ⋮ [-] 12  GEOS loaded from directory ‹/usr/local/lib/cockroach›
+I210622 09:38:54.372158 1 1@cli/start.go:510 ⋮ [-] 13  starting cockroach node
+I210622 09:38:54.449968 12 server/config.go:568 ⋮ [n?] 14  1 storage engine‹› initialized
+I210622 09:38:54.450053 12 server/config.go:571 ⋮ [n?] 15  ‹Pebble cache size: 128 MiB›
+I210622 09:38:54.450064 12 server/config.go:571 ⋮ [n?] 16  ‹store 0: RocksDB, max size 0 B, max open file limit 1043576›
+I210622 09:38:54.545921 12 1@server/server.go:913 ⋮ [n?] 17  monitoring forward clock jumps based on server.clock.forward_jump_check_enabled
+I210622 09:38:54.562275 99 1@server/server.go:1552 ⋮ [n?] 18  connecting to gossip network to verify cluster ID ‹"ad3179ff-02b3-4e07-8e68-fd91db209837"›
+I210622 09:38:54.563198 12 gossip/gossip.go:402 ⋮ [n1] 19  NodeDescriptor set to ‹node_id:1 address:<network_field:"tcp" address_field:"cockroachdb-as-service:26257" > attrs:<> locality:<> ServerVersion:<major_val:21 minor_val:1 patch:0 internal:0 > build_tag:"v21.1.2" started_at:1624354734563191356 cluster_name:"" sql_address:<network_field:"tcp" address_field:"cockroachdb-as-service:26257" >›
+I210622 09:38:54.563582 103 kv/kvserver/closedts/provider/provider.go:135 ⋮ [ct-closer] 20  disabling legacy closed-timestamp mechanism; the new one is enabled
+I210622 09:38:54.608757 12 server/node.go:388 ⋮ [n1] 21  initialized store s1
+I210622 09:38:54.609048 12 kv/kvserver/stores.go:250 ⋮ [n1] 22  read 0 node addresses from persistent storage
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23  can't determine lease status of (n1,s1):1 due to node liveness error: liveness record not found in cache
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +(1) attached stack trace
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  -- stack trace:
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness.init
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/go/src/github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness/liveness.go:52
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.doInit
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/proc.go:5652
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.doInit
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/proc.go:5647
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.doInit
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/proc.go:5647
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.doInit
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/proc.go:5647
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.doInit
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/proc.go:5647
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.doInit
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/proc.go:5647
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.main
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/proc.go:191
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | runtime.goexit
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +  | 	/usr/local/go/src/runtime/asm_amd64.s:1374
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +Wraps: (2) liveness record not found in cache
+W210622 09:38:54.608994 127 kv/kvserver/replica_range_lease.go:611 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 23 +Error types: (1) *withstack.withStack (2) *errutil.leafError
+W210622 09:38:54.609163 127 kv/kvserver/store.go:1689 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 24  could not gossip system config: ‹[NotLeaseHolderError] lease state couldn't be determined; r6: replica (n1,s1):1 not lease holder; lease holder unknown›
+W210622 09:38:54.609163 127 kv/kvserver/store.go:1689 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 24 +(1) ‹[NotLeaseHolderError] lease state couldn't be determined; r6: replica (n1,s1):1 not lease holder; lease holder unknown›
+W210622 09:38:54.609163 127 kv/kvserver/store.go:1689 ⋮ [n1,s1,r6/1:‹/Table/{SystemCon…-11}›] 24 +Error types: (1) *roachpb.NotLeaseHolderError
+I210622 09:38:54.609291 99 1@server/server.go:1555 ⋮ [n1] 25  node connected via gossip
+I210622 09:38:54.611812 12 server/node.go:465 ⋮ [n1] 26  started with engine type ‹2›
+I210622 09:38:54.611878 12 server/node.go:467 ⋮ [n1] 27  started with attributes ‹[]›
+I210622 09:38:54.611940 12 server/goroutinedumper/goroutinedumper.go:120 ⋮ [n1] 28  writing goroutine dumps to ‹/work/cockroach-data/logs/goroutine_dump›
+I210622 09:38:54.611956 12 server/heapprofiler/heapprofiler.go:49 ⋮ [n1] 29  writing go heap profiles to ‹/work/cockroach-data/logs/heap_profiler› at least every 1h0m0s
+I210622 09:38:54.611985 12 server/heapprofiler/cgoprofiler.go:53 ⋮ [n1] 30  to enable jmalloc profiling: "export MALLOC_CONF=prof:true" or "ln -s prof:true /etc/malloc.conf"
+I210622 09:38:54.612001 12 server/heapprofiler/statsprofiler.go:54 ⋮ [n1] 31  writing memory stats to ‹/work/cockroach-data/logs/heap_profiler› at last every 1h0m0s
+I210622 09:38:54.612015 12 1@server/server.go:1682 ⋮ [n1] 32  starting http server at ‹[::]:8080› (use: ‹cockroachdb-as-service:8080›)
+I210622 09:38:54.612031 12 1@server/server.go:1689 ⋮ [n1] 33  starting grpc/postgres server at ‹[::]:26257›
+I210622 09:38:54.612046 12 1@server/server.go:1690 ⋮ [n1] 34  advertising CockroachDB node at ‹cockroachdb-as-service:26257›
+I210622 09:38:54.675481 12 1@util/log/event_log.go:32 ⋮ [n1] 35 ={"Timestamp":1624354734675478908,"EventType":"node_restart","NodeID":1,"StartedAt":1624354734563191356,"LastUp":1624354639169525192}
+I210622 09:38:54.675630 12 sql/sqlliveness/slinstance/slinstance.go:252 ⋮ [n1] 36  starting SQL liveness instance
+I210622 09:38:54.682783 172 sql/temporary_schema.go:492 ⋮ [n1] 37  running temporary object cleanup background job
+I210622 09:38:54.685090 12 server/server_sql.go:848 ⋮ [n1] 38  done ensuring all necessary startup migrations have run
+I210622 09:38:54.685614 12 1@server/server.go:2083 ⋮ [n1] 39  serving sql connections
+I210622 09:38:54.685975 12 1@cli/start.go:676 ⋮ [config] 40  clusterID: ‹ad3179ff-02b3-4e07-8e68-fd91db209837›
+I210622 09:38:54.686021 12 1@cli/start.go:676 ⋮ [config] 41  nodeID: n1
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42  node startup completed:
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +CockroachDB node starting at 2021-06-22 09:38:54.685655259 +0000 UTC (took 0.4s)
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +build:               CCL v21.1.2 @ 2021/06/07 18:09:50 (go1.15.11)
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +webui:               ‹http://cockroachdb-as-service:8080›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +sql:                 ‹postgresql://root@cockroachdb-as-service:26257?sslmode=disable›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +RPC client flags:    ‹/cockroach/cockroach <client cmd> --host=cockroachdb-as-service:26257 --insecure›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +logs:                ‹/work/cockroach-data/logs›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +temp dir:            ‹/work/cockroach-data/cockroach-temp693929515›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +external I/O path:   ‹/work/cockroach-data/extern›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +store[0]:            ‹path=/work/cockroach-data›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +storage engine:      pebble
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +status:              restarted pre-existing node
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +clusterID:           ‹ad3179ff-02b3-4e07-8e68-fd91db209837›
+I210622 09:38:54.686095 12 1@cli/start.go:686 ⋮ [-] 42 +nodeID:              1
+I210622 09:38:54.688536 204 jobs/job_scheduler.go:360 ⋮ [n1] 43  waiting 2m0s before scheduled jobs daemon start
+I210622 09:38:54.693595 206 server/auto_upgrade.go:55 ⋮ [n1] 44  no need to upgrade, cluster already at the newest version
+I210622 09:38:54.721545 172 sql/temporary_schema.go:527 ⋮ [n1] 45  found 0 temporary schemas
+I210622 09:38:54.722850 172 sql/temporary_schema.go:530 ⋮ [n1] 46  early exiting temporary schema cleaner as no temporary schemas were found
+I210622 09:38:54.723076 172 sql/temporary_schema.go:531 ⋮ [n1] 47  completed temporary object cleanup job
+I210622 09:38:54.723147 172 sql/temporary_schema.go:610 ⋮ [n1] 48  temporary object cleaner next scheduled to run at 2021-06-22 10:08:54.68272148 +0000 UTC
+I210622 09:38:54.745026 183 sql/sqlliveness/slstorage/slstorage.go:352 ⋮ [n1] 49  inserted sqlliveness session ‹972fc0e9a86749f0bf5b9d175459d266›
+I210622 09:38:54.745199 183 sql/sqlliveness/slinstance/slinstance.go:144 ⋮ [n1] 50  created new SQL liveness session ‹972fc0e9a86749f0bf5b9d175459d266›
+I210622 09:38:56.753339 102 1@gossip/gossip.go:1505 ⋮ [n1] 51  node has connected to cluster via gossip
+I210622 09:38:56.754075 102 kv/kvserver/stores.go:269 ⋮ [n1] 52  wrote 0 node addresses to persistent storage
+I210622 09:39:04.594340 153 2@server/status/runtime.go:569 ⋮ [n1] 53  runtime stats: 125 MiB RSS, 136 goroutines (stacks: 1.8 MiB), 21 MiB/41 MiB Go alloc/total (heap fragmentation: 4.0 MiB, heap reserved: 5.9 MiB, heap released: 31 MiB), 5.9 MiB/8.2 MiB CGO alloc/total (0.0 CGO/sec), 0.0/0.0 %(u/s)time, 0.0 %gc (0x), 606 B/0 B (r/w)net
+I210622 09:39:14.595308 153 2@server/status/runtime.go:569 ⋮ [n1] 54  runtime stats: 129 MiB RSS, 135 goroutines (stacks: 1.9 MiB), 31 MiB/44 MiB Go alloc/total (heap fragmentation: 2.9 MiB, heap reserved: 384 KiB, heap released: 28 MiB), 5.9 MiB/8.2 MiB CGO alloc/total (0.1 CGO/sec), 5.5/9.1 %(u/s)time, 0.0 %gc (0x), 70 B/0 B (r/w)net
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55  
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +__level_____count____size___score______in__ingest(sz_cnt)____move(sz_cnt)___write(sz_cnt)____read___r-amp___w-amp
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +    WAL         2   571 K       -   568 K       -       -       -       -   571 K       -       -       -     1.0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +      0         0     0 B    0.00     0 B     0 B       0     0 B       0     0 B       0     0 B       0     0.0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +      1         0     0 B    0.00     0 B     0 B       0     0 B       0     0 B       0     0 B       0     0.0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +      2         0     0 B    0.00     0 B     0 B       0     0 B       0     0 B       0     0 B       0     0.0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +      3         0     0 B    0.00     0 B     0 B       0     0 B       0     0 B       0     0 B       0     0.0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +      4         0     0 B    0.00     0 B     0 B       0     0 B       0     0 B       0     0 B       0     0.0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +      5         0     0 B    0.00     0 B     0 B       0     0 B       0     0 B       0     0 B       0     0.0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +      6         1   192 K       -    82 K     0 B       0     0 B       0   192 K       1   262 K       1     2.3
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +  total         1   192 K       -   571 K     0 B       0     0 B       0   762 K       1   262 K       1     1.3
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +  flush         0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +compact         1     0 B            82 K  (size == estimated-debt, in = in-progress-bytes)
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 + memtbl         2   2.3 M
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +zmemtbl         0     0 B
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 +   ztbl         0     0 B
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 + bcache        14   458 K   96.7%  (score == hit-rate)
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 + tcache         1   616 B   99.5%  (score == hit-rate)
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 + titers         0
+I210622 09:39:14.600897 149 kv/kvserver/store.go:2662 ⋮ [n1,s1] 55 + filter         -       -    0.0%  (score == utility)
+I210622 09:39:14.724455 182 sql/sqlliveness/slstorage/slstorage.go:330 ⋮ [n1] 56  deleted 1 expired SQL liveness sessions
+I210622 09:39:16.415720 1 1@cli/start.go:737 ⋮ [-] 57  received signal 'terminated'
+I210622 09:39:16.416740 1 1@cli/start.go:821 ⋮ [-] 58  initiating graceful shutdown of server
+I210622 09:39:16.423092 636 1@server/drain.go:157 ⋮ [server drain process] 59  drain remaining: 1
+I210622 09:39:16.424276 636 1@server/drain.go:159 ⋮ [server drain process] 60  drain details: liveness record: 1
+I210622 09:39:16.626918 636 1@server/drain.go:157 ⋮ [server drain process] 61  drain remaining: 0
+W210622 09:39:16.627411 184 jobs/registry.go:729 ⋮ [-] 62  canceling all adopted jobs due to stopper quiescing
+W210622 09:39:16.627468 183 sql/sqlliveness/slinstance/slinstance.go:183 ⋮ [n1] 63  exiting heartbeat loop
+I210622 09:39:16.642745 1 1@cli/start.go:873 ⋮ [-] 64  server drained and shutdown completed

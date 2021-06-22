@@ -99,7 +99,7 @@ func (s *ManifestStage) Validate() (warnings []string, errors []error) {
 		}
 	}
 
-	if len(s.Stages) == 0 && len(s.Commands) == 0 {
+	if len(s.Stages) == 0 && len(s.Commands) == 0 && !s.Detach {
 		errors = append(errors, fmt.Errorf("stage has no commands; define at least stage through 'commands'"))
 	}
 
