@@ -170,3 +170,22 @@ Regular stages run sequentially, but in order to speed up things you can run sta
 ```
 
 Since these stages share the same mounted working directory do ensure they are safe to run concurrently!
+
+# Local development
+
+You can either install `infinity` and run `infinity build`; this will compile and install the cli in the go binary folder. Or just run `go install` instead.
+
+# Release
+
+To create a new release in Github first create a zipped version of the CLI with
+
+```
+INFINITY_VERSION=v0.1.8
+
+CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X 'github.com/JorritSalverda/infinity/cmd.version=${INFINITY_VERSION}'" -o infinity-${INFINITY_VERSION}-darwin-amd64
+zip infinity-${INFINITY_VERSION}-darwin-amd64.zip infinity-${INFINITY_VERSION}-darwin-amd64
+rm -rf infinity-${INFINITY_VERSION}-darwin-amd64
+shasum -a 256 infinity-${INFINITY_VERSION}-darwin-amd64.zip
+```
+
+Then create a release with the version as tag and release title and add the zip file as attached file. Then update `url`, `sha256`, `version` and `install` in the `Formula/infinity.rb` file in repository `github.com/JorritSalverda/homebrew-core`. Once it's pushed to Github you can run `brew upgrade` to get the latest version on your machine.

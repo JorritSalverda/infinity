@@ -17,3 +17,7 @@ build:
       commands:
       - go test -short ./...
       - go build -a -installsuffix cgo .
+  - name: install
+    runner: metal
+    commands:
+    - go install

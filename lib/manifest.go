@@ -23,6 +23,9 @@ func (m *Manifest) Validate() (warnings []string, errors []error) {
 	if !m.Language.IsSupported() {
 		errors = append(errors, fmt.Errorf("language is unknown; set to a supported language with 'language: %v'", strings.Join(SupportedLanguages.ToStringArray(), "|")))
 	}
+	if m.Name == "" {
+		errors = append(errors, fmt.Errorf("application has no name; please set 'name: <name>'"))
+	}
 
 	w, e := m.Build.Validate()
 	warnings = append(warnings, w...)
