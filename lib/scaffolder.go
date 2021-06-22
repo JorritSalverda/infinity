@@ -13,6 +13,7 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
+//go:generate mockgen -package=lib -destination ./scaffolder_mock.go -source=scaffolder.go
 type Scaffolder interface {
 	Scaffold(ctx context.Context, applicationType ApplicationType, language Language, applicationName string) (err error)
 }

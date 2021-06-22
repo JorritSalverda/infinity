@@ -9,7 +9,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("SucceedsIfInfinityManifestIsValid", func(t *testing.T) {
-		builder := NewBuilder(false, ".infinity-test.yaml")
+		builder := NewBuilder(NewCommandRunner(), false, ".infinity-test.yaml")
 
 		// act
 		_, err := builder.Validate(context.Background())

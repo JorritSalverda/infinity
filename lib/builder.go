@@ -1,14 +1,11 @@
 package lib
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -16,12 +13,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+//go:generate mockgen -package=lib -destination ./builder_mock.go -source=builder.go
 type Builder interface {
 	Validate(ctx context.Context) (manifest Manifest, err error)
 	Build(ctx context.Context) (err error)
 }
 
 type builder struct {
+	commandRunner           CommandRunner
 	verbose                 bool
 	buildManifestFilename   string
 	pulledImages            map[string]struct{}
@@ -30,8 +29,9 @@ type builder struct {
 	detachedContainersMutex *MapMutex
 }
 
-func NewBuilder(verbose bool, buildManifestFilename string) Builder {
+func NewBuilder(commandRunner CommandRunner, verbose bool, buildManifestFilename string) Builder {
 	return &builder{
+		commandRunner:           commandRunner,
 		buildManifestFilename:   buildManifestFilename,
 		verbose:                 verbose,
 		pulledImages:            make(map[string]struct{}),
@@ -230,7 +230,7 @@ func (b *builder) terminateDetachedContainer(ctx context.Context, stage Manifest
 		if b.verbose {
 			logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerStopArgs, " "))
 		}
-		errorChannel <- b.runCommandWithLogger(ctx, logger, dockerCommand, dockerStopArgs)
+		errorChannel <- b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerStopArgs)
 	}()
 
 	// tail logs
@@ -244,7 +244,7 @@ func (b *builder) terminateDetachedContainer(ctx context.Context, stage Manifest
 		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerLogsArgs, " "))
 	}
 
-	err = b.runCommandWithLogger(ctx, logger, dockerCommand, dockerLogsArgs)
+	err = b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerLogsArgs)
 	if err != nil {
 		return
 	}
@@ -274,7 +274,7 @@ func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage M
 	logger.Printf(aurora.Gray(12, "Pulling image %v").String(), aurora.BrightBlue(stage.Image))
 
 	start := time.Now()
-	err = b.runCommandWithLogger(ctx, logger, dockerCommand, dockerPullArgs)
+	err = b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerPullArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
@@ -345,7 +345,7 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 		logger.Printf(aurora.Gray(12, "Starting detached stage").String())
 
 		start := time.Now()
-		containerIDBytes, err := b.runCommandWithOutput(ctx, dockerCommand, dockerRunArgs)
+		containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, dockerCommand, dockerRunArgs)
 		elapsed := time.Since(start)
 		if err != nil {
 			logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
@@ -367,7 +367,7 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	logger.Printf(aurora.Gray(12, "Executing commands").String())
 
 	start := time.Now()
-	err = b.runCommandWithLogger(ctx, logger, dockerCommand, dockerRunArgs)
+	err = b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerRunArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
@@ -388,7 +388,7 @@ func (b *builder) metalRun(ctx context.Context, logger *log.Logger, stage Manife
 		logger.Printf(aurora.Gray(12, "> %v").String(), c)
 
 		splitCommands := strings.Split(c, " ")
-		err = b.runCommandWithLogger(ctx, logger, splitCommands[0], splitCommands[1:])
+		err = b.commandRunner.RunCommandWithLogger(ctx, logger, splitCommands[0], splitCommands[1:])
 		if err != nil {
 			break
 		}
@@ -403,44 +403,4 @@ func (b *builder) metalRun(ctx context.Context, logger *log.Logger, stage Manife
 	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
 
 	return nil
-}
-
-func (b *builder) runCommandWithLogger(ctx context.Context, logger *log.Logger, command string, args []string) (err error) {
-	cmd := exec.CommandContext(ctx, command, args...)
-	cmd.Env = os.Environ()
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-
-	// start container
-	if err = cmd.Start(); err != nil {
-		return
-	}
-
-	// tail logs with custom logger
-	multi := io.MultiReader(stdout, stderr)
-	scanner := bufio.NewScanner(multi)
-	for scanner.Scan() {
-		logger.Printf(scanner.Text())
-	}
-
-	// wait until the container is done
-	if err = cmd.Wait(); err != nil {
-		return
-	}
-
-	return nil
-}
-
-func (b *builder) runCommandWithOutput(ctx context.Context, command string, args []string) (output []byte, err error) {
-	cmd := exec.CommandContext(ctx, command, args...)
-	cmd.Env = os.Environ()
-
-	return cmd.CombinedOutput()
 }
