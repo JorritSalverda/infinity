@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"text/template"
 
 	"github.com/logrusorgru/aurora"
@@ -31,6 +32,15 @@ func NewScaffolder(verbose bool, buildManifestFilename, templateBaseURL string) 
 }
 
 func (s *scaffolder) Scaffold(ctx context.Context, applicationType ApplicationType, language Language, applicationName string) (err error) {
+	if !applicationType.IsSupported() {
+		return fmt.Errorf("application type is unknown; supported values are %v", strings.Join(SupportedApplicationTypes.ToStringArray(), ", "))
+	}
+	if !language.IsSupported() {
+		return fmt.Errorf("language type is unknown; supported values are %v", strings.Join(SupportedLanguages.ToStringArray(), ", "))
+	}
+	if applicationName == "" {
+		return fmt.Errorf("application name is empty")
+	}
 
 	templateURL := fmt.Sprintf("%v%v-%v.gotmpl", s.templateBaseURL, applicationType, language)
 

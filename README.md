@@ -43,7 +43,7 @@ infinity scaffold [application type] [language] [application name]
 This could be used like:
 
 ```
-infinity scaffold library golang mylib
+infinity scaffold library go mylib
 ```
 
 After running this the manifest will be generated in the current working directory.

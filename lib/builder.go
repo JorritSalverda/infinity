@@ -127,7 +127,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 	}
 
 	switch stage.RunnerType {
-	case RunnerContainer:
+	case RunnerTypeContainer:
 		// docker pull <image>
 		err = b.containerPull(ctx, logger, stage)
 		if err != nil {
@@ -136,7 +136,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 
 		// docker run <image> <commands>
 		return b.containerRun(ctx, logger, stage)
-	case RunnerMetal:
+	case RunnerTypeMetal:
 		return b.metalRun(ctx, logger, stage)
 	}
 

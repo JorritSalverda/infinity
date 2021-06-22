@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
-
 	"github.com/JorritSalverda/infinity/lib"
 	"github.com/spf13/cobra"
 )
@@ -16,18 +14,8 @@ var (
 			scaffolder := lib.NewScaffolder(verboseFlag, buildManifestFilenameFlag, templateBaseURLFlag)
 
 			// extract arguments
-			var applicationType lib.ApplicationType
-			err := json.Unmarshal([]byte(args[0]), &applicationType)
-			if err != nil {
-				return err
-			}
-
-			var language lib.Language
-			err = json.Unmarshal([]byte(args[1]), &language)
-			if err != nil {
-				return err
-			}
-
+			applicationType := lib.ApplicationType(args[0])
+			language := lib.Language(args[1])
 			applicationName := args[2]
 
 			return scaffolder.Scaffold(cmd.Context(), applicationType, language, applicationName)

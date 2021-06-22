@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Manifest struct {
@@ -15,11 +16,11 @@ func (m *Manifest) SetDefault() {
 }
 
 func (m *Manifest) Validate() (warnings []string, errors []error) {
-	if m.ApplicationType == ApplicationTypeUnknown {
-		errors = append(errors, fmt.Errorf("application is unknown; set to a supported application type with 'application: <application>'"))
+	if !m.ApplicationType.IsSupported() {
+		errors = append(errors, fmt.Errorf("application is unknown; set to a supported application type with 'application: %v'", strings.Join(SupportedApplicationTypes.ToStringArray(), "|")))
 	}
-	if m.Language == LanguageUnknown {
-		errors = append(errors, fmt.Errorf("language is unknown; set to a supported language with 'language: <language>'"))
+	if !m.Language.IsSupported() {
+		errors = append(errors, fmt.Errorf("language is unknown; set to a supported language with 'language: %v'", strings.Join(SupportedLanguages.ToStringArray(), "|")))
 	}
 
 	w, e := m.Build.Validate()
@@ -67,8 +68,8 @@ type ManifestStage struct {
 }
 
 func (s *ManifestStage) SetDefault() {
-	if s.RunnerType == RunnerUnknown {
-		s.RunnerType = RunnerContainer
+	if s.RunnerType == RunnerTypeUnknown {
+		s.RunnerType = RunnerTypeContainer
 	}
 	for _, st := range s.Stages {
 		st.SetDefault()
@@ -79,16 +80,16 @@ func (s *ManifestStage) Validate() (warnings []string, errors []error) {
 	if s.Name == "" {
 		errors = append(errors, fmt.Errorf("stage has no name; please set 'name: <name>'"))
 	}
-	if s.RunnerType == RunnerUnknown {
-		errors = append(errors, fmt.Errorf("unknown runner; please set 'runner: container|metal'"))
+	if s.RunnerType == RunnerTypeUnknown {
+		errors = append(errors, fmt.Errorf("unknown runner; please set 'runner: %v'", strings.Join(SupportedRunnerTypes.ToStringArray(), "|")))
 	}
 
 	switch s.RunnerType {
-	case RunnerContainer:
+	case RunnerTypeContainer:
 		if len(s.Stages) == 0 && s.Image == "" {
 			errors = append(errors, fmt.Errorf("stage has no image; please set 'image: <image>'"))
 		}
-	case RunnerMetal:
+	case RunnerTypeMetal:
 		if len(s.Stages) == 0 && s.Image != "" {
 			errors = append(errors, fmt.Errorf("stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'"))
 		}
