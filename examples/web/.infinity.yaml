@@ -15,10 +15,10 @@ build:
       npm_config_update-notifier: false
     commands:
     - npm ci
-  # - name: bake
-  #   image: docker:20.10.7-dind
-  #   privileged: true
-  #   commands:
-  #   - ( dockerd-entrypoint.sh & )
-  #   - ( while true ; do if [ -S /var/run/docker.sock ] ; then break ; fi ; sleep 3 ; done )
-  #   - docker build -t web:local .
+  - name: bake
+    image: docker:20.10.7-dind
+    privileged: true
+    commands:
+    - ( dockerd-entrypoint.sh & )
+    - ( while true ; do if [ -S /var/run/docker.sock ] ; then break ; fi ; sleep 3 ; done )
+    - docker build -t web:local .
