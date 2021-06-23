@@ -64,7 +64,7 @@ type ManifestStage struct {
 	Image      string                 `yaml:"image,omitempty" json:"image,omitempty"`
 	Detach     bool                   `yaml:"detach,omitempty" json:"detach,omitempty"`
 	Privileged bool                   `yaml:"privileged,omitempty" json:"privileged,omitempty"`
-	Mounts     []string               `yaml:"mounts,omitempty" json:"mounts,omitempty"`
+	Volumes    []string               `yaml:"volumes,omitempty" json:"volumes,omitempty"`
 	Devices    []string               `yaml:"devices,omitempty" json:"devices,omitempty"`
 	Env        map[string]string      `yaml:"env,omitempty" json:"env,omitempty"`
 	Commands   []string               `yaml:"commands,omitempty" json:"commands,omitempty"`

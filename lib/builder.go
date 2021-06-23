@@ -280,8 +280,8 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 		fmt.Sprintf("--volume=%v:/work", pwd),
 		"--workdir=/work",
 	}
-	for _, m := range stage.Mounts {
-		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", m))
+	for _, v := range stage.Volumes {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", v))
 	}
 	for _, d := range stage.Devices {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--device=%v", d))

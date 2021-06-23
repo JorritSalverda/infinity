@@ -107,21 +107,23 @@ When executed with the `infinity build` command it executes the `npm audit` and 
 
 ![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.jpg?raw=true)
 
-### Mounts and privileged mode
+### Volumes, devices and privileged mode
 
-To run some more advanced use cases you can set `privileged: true` on a stage, and multiple mounts. This allows you for example to let _infinity_ build a dockerfile in the following manner:
+To run some more advanced use cases you can set `privileged: true` on a stage and mount one or more volumes with the `volumes` array. This allows you for example to let _infinity_ build a Dockerfile in the following manner:
 
 ```yaml
   - name: bake
     image: docker:20.10.7
     privileged: true
-    mounts:
+    volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     commands:
     - docker build -t web:local .
 ```
 
-With this example the `docker build` command actually uses your hosts Docker daemon. In order to build the container in isolation you can use
+With this example the `docker build` command actually uses your hosts Docker daemon. 
+
+In order to build the container in isolation you can use the _docker inside docker_ image instead which runs its own Docker daemon.
 
 ```yaml
   - name: bake
@@ -133,13 +135,25 @@ With this example the `docker build` command actually uses your hosts Docker dae
     - docker build -t web:local .
 ```
 
-You can also use it to mount devices and in that way allow stages to control some connected hardware:
+You can mount devices so commands inside the stage can connect to hardware on the host:
+
+```yaml
+  - name: test
+    image: alpine:3.13
+    devices:
+    - /dev/ttyUSB0:/dev/ttyUSB0
+    commands:
+    # this runs forever, but shows serial usb port output
+    - cat /dev/ttyUSB0
+```
+
+You can do the same by mounting the devices as volumes, but that needs to be combined with _privileged_ mode:
 
 ```yaml
   - name: test
     image: alpine:3.13
     privileged: true
-    mounts:
+    volumes:
     - /dev/ttyUSB0:/dev/ttyUSB0
     commands:
     # this runs forever, but shows serial usb port output
@@ -292,7 +306,7 @@ Then create a release with the version as tag and release title and add the zip 
 | `build.stages[].image`      | docker container image path for the image to run the stage commands in                                                                                                                                                       | `string`                                 |             |
 | `build.stages[].detach`     | run stage in detached mode, to provide a service in the background                                                                                                                                                           | `true\|false`                            | `false`     |
 | `build.stages[].privileged` | run stage in privileged mode, to allow more privileges to the host operating system                                                                                                                                          | `true\|false`                            | `false`     |
-| `build.stages[].mounts`     | array of volumes to mount, with source and target folder separated by `:`                                                                                                                                                    | `[]string`                               |             |
+| `build.stages[].volumes`     | array of volumes to mount, with source and target folder separated by `:`                                                                                                                                                   | `[]string`                               |             |
 | `build.stages[].devices`    | array of devices to mount, with source and target device path separated by `:`                                                                                                                                               | `[]string`                               |             |
 | `build.stages[].env`        | map of environment value keys and values to allow setting envvars in a stage                                                                                                                                                 | `map[string]string`                      |             |
 | `build.stages[].devices`    | array of commands to execute inside the stage container or on bare metal                                                                                                                                                     | `[]string`                               |             |
