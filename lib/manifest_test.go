@@ -32,3 +32,267 @@ func TestUnmarshalManifest(t *testing.T) {
 		assert.Equal(t, "go build -a -installsuffix cgo .", manifest.Build.Stages[1].Commands[0])
 	})
 }
+
+func TestSetDefaultForManifest(t *testing.T) {
+	t.Run("CallsSetDefaultOnBuildStages", func(t *testing.T) {
+		manifest := Manifest{
+			Build: ManifestBuild{
+				Stages: []*ManifestStage{
+					{
+						RunnerType: RunnerTypeUnknown,
+					},
+				},
+			},
+		}
+
+		// act
+		manifest.SetDefault()
+
+		assert.Equal(t, RunnerTypeContainer, manifest.Build.Stages[0].RunnerType)
+	})
+}
+
+func TestValidateForManifest(t *testing.T) {
+	t.Run("ReturnsNoErrorIfManifestIsValid", func(t *testing.T) {
+		manifest := getValidManifest()
+
+		// act
+		_, errors := manifest.Validate()
+
+		assert.Equal(t, 0, len(errors))
+	})
+
+	t.Run("ReturnsErrorIfApplicationTypeIsUnknown", func(t *testing.T) {
+		manifest := getValidManifest()
+		manifest.ApplicationType = ApplicationTypeUnknown
+
+		// act
+		_, errors := manifest.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "application is unknown; set to a supported application type with 'application: library|cli|firmware|api|web'", errors[0].Error())
+	})
+
+	t.Run("ReturnsErrorIfLanguageIsUnknown", func(t *testing.T) {
+		manifest := getValidManifest()
+		manifest.Language = LanguageUnknown
+
+		// act
+		_, errors := manifest.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "language is unknown; set to a supported language with 'language: go|c|c++|java|csharp|python|node'", errors[0].Error())
+	})
+
+	t.Run("ReturnsErrorIfNameIsEmpty", func(t *testing.T) {
+		manifest := getValidManifest()
+		manifest.Name = ""
+
+		// act
+		_, errors := manifest.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "application has no name; please set 'name: <name>'", errors[0].Error())
+	})
+
+	t.Run("CallsValidateOnAllBuildStages", func(t *testing.T) {
+		manifest := getValidManifest()
+		manifest.Build.Stages[0].Name = ""
+
+		// act
+		_, errors := manifest.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "stage has no name; please set 'name: <name>'", errors[0].Error())
+	})
+}
+
+func TestSetDefaultForManifestStage(t *testing.T) {
+	t.Run("DefaultsRunnerTypeToContainerIfUnknown", func(t *testing.T) {
+		stage := ManifestStage{
+			RunnerType: RunnerTypeUnknown,
+		}
+
+		// act
+		stage.SetDefault()
+
+		assert.Equal(t, RunnerTypeContainer, stage.RunnerType)
+	})
+
+	t.Run("KeepsRunnerTypeIfNotUnknown", func(t *testing.T) {
+		stage := ManifestStage{
+			RunnerType: RunnerTypeMetal,
+		}
+
+		// act
+		stage.SetDefault()
+
+		assert.Equal(t, RunnerTypeMetal, stage.RunnerType)
+	})
+
+	t.Run("DefaultsEnvToEmptyMapIfNil", func(t *testing.T) {
+		stage := ManifestStage{
+			Env: nil,
+		}
+
+		// act
+		stage.SetDefault()
+
+		assert.NotNil(t, stage.Env)
+	})
+
+	t.Run("CallsSetDefaultOnNestedStages", func(t *testing.T) {
+		stage := ManifestStage{
+			Stages: []*ManifestStage{
+				{
+					RunnerType: RunnerTypeUnknown,
+				},
+			},
+		}
+
+		// act
+		stage.SetDefault()
+
+		assert.Equal(t, RunnerTypeContainer, stage.Stages[0].RunnerType)
+	})
+}
+
+func TestValidateForManifestStage(t *testing.T) {
+	t.Run("ReturnsNoErrorIfStageIsValid", func(t *testing.T) {
+		stage := getValidManifestStage()
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 0, len(errors))
+	})
+
+	t.Run("ReturnsErrorIfNameIsEmpty", func(t *testing.T) {
+		stage := getValidManifestStage()
+		stage.Name = ""
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "stage has no name; please set 'name: <name>'", errors[0].Error())
+	})
+
+	t.Run("ReturnsErrorIfRunnerTypeIsUnknown", func(t *testing.T) {
+		stage := getValidManifestStage()
+		stage.RunnerType = RunnerTypeUnknown
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "unknown runner; please set 'runner: container|metal'", errors[0].Error())
+	})
+
+	t.Run("ReturnsNoErrorIfRunnerTypeIsUnknownAndStageHasNestedStages", func(t *testing.T) {
+		innerStage := getValidManifestStage()
+		stage := getValidManifestStage()
+		stage.RunnerType = RunnerTypeUnknown
+		stage.Stages = []*ManifestStage{
+			&innerStage,
+		}
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 0, len(errors))
+	})
+
+	t.Run("ReturnsErrorIfImageIsEmpty", func(t *testing.T) {
+		stage := getValidManifestStage()
+		stage.Image = ""
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "stage has no image; please set 'image: <image>'", errors[0].Error())
+	})
+
+	t.Run("ReturnsNoErrorIfImageIsEmptyAndStageHasNestedStages", func(t *testing.T) {
+		innerStage := getValidManifestStage()
+		stage := getValidManifestStage()
+		stage.Image = ""
+		stage.Stages = []*ManifestStage{
+			&innerStage,
+		}
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 0, len(errors))
+	})
+
+	t.Run("ReturnsErrorIfImageIsSetWhenRunnerTypeIsMetal", func(t *testing.T) {
+		stage := getValidManifestStage()
+		stage.RunnerType = RunnerTypeMetal
+		stage.Image = "jsalverda/arduino-cli:0.18.3"
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'", errors[0].Error())
+	})
+
+	t.Run("ReturnsWarningIfNoCommandsAreSet", func(t *testing.T) {
+		stage := getValidManifestStage()
+		stage.Commands = []string{}
+
+		// act
+		warnings, _ := stage.Validate()
+
+		assert.Equal(t, 1, len(warnings))
+		assert.Equal(t, "stage has no commands; you might want to define at least one command through 'commands'", warnings[0])
+	})
+
+	t.Run("CallsValidateOnNestedStages", func(t *testing.T) {
+
+		innerStage := getValidManifestStage()
+		innerStage.Name = ""
+
+		outerStage := ManifestStage{
+			Name: "outer-stage-1",
+			Stages: []*ManifestStage{
+				&innerStage,
+			},
+		}
+
+		// act
+		_, errors := outerStage.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "stage has no name; please set 'name: <name>'", errors[0].Error())
+	})
+}
+
+func getValidManifest() Manifest {
+	stage := getValidManifestStage()
+
+	return Manifest{
+		ApplicationType: ApplicationTypeAPI,
+		Language:        LanguageGo,
+		Name:            ":myapp",
+		Build: ManifestBuild{
+			Stages: []*ManifestStage{
+				&stage,
+			},
+		},
+	}
+}
+
+func getValidManifestStage() ManifestStage {
+	return ManifestStage{
+		Name:       "stage-1",
+		RunnerType: RunnerTypeContainer,
+		Image:      "jsalverda/arduino-cli:0.18.3",
+		Commands: []string{
+			"arduino-cli board list",
+		},
+	}
+}

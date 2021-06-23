@@ -59,21 +59,25 @@ func (b *ManifestBuild) Validate() (warnings []string, errors []error) {
 }
 
 type ManifestStage struct {
-	Name       string            `yaml:"name,omitempty" json:"name,omitempty"`
-	RunnerType RunnerType        `yaml:"runner,omitempty" json:"runner,omitempty"`
-	Image      string            `yaml:"image,omitempty" json:"image,omitempty"`
-	Detach     bool              `yaml:"detach,omitempty" json:"detach,omitempty"`
-	Privileged bool              `yaml:"privileged,omitempty" json:"privileged,omitempty"`
-	Mounts     []string          `yaml:"mounts,omitempty" json:"mounts,omitempty"`
-	Devices    []string          `yaml:"devices,omitempty" json:"devices,omitempty"`
-	Env        map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
-	Commands   []string          `yaml:"commands,omitempty" json:"commands,omitempty"`
-	Stages     []*ManifestStage  `yaml:"stages,omitempty" json:"stages,omitempty"`
+	Name       string                 `yaml:"name,omitempty" json:"name,omitempty"`
+	RunnerType RunnerType             `yaml:"runner,omitempty" json:"runner,omitempty"`
+	Image      string                 `yaml:"image,omitempty" json:"image,omitempty"`
+	Detach     bool                   `yaml:"detach,omitempty" json:"detach,omitempty"`
+	Privileged bool                   `yaml:"privileged,omitempty" json:"privileged,omitempty"`
+	Mounts     []string               `yaml:"mounts,omitempty" json:"mounts,omitempty"`
+	Devices    []string               `yaml:"devices,omitempty" json:"devices,omitempty"`
+	Env        map[string]string      `yaml:"env,omitempty" json:"env,omitempty"`
+	Commands   []string               `yaml:"commands,omitempty" json:"commands,omitempty"`
+	Stages     []*ManifestStage       `yaml:"stages,omitempty" json:"stages,omitempty"`
+	Parameters map[string]interface{} `yaml:",inline"`
 }
 
 func (s *ManifestStage) SetDefault() {
 	if s.RunnerType == RunnerTypeUnknown {
 		s.RunnerType = RunnerTypeContainer
+	}
+	if s.Env == nil {
+		s.Env = make(map[string]string)
 	}
 	for _, st := range s.Stages {
 		st.SetDefault()
@@ -84,23 +88,24 @@ func (s *ManifestStage) Validate() (warnings []string, errors []error) {
 	if s.Name == "" {
 		errors = append(errors, fmt.Errorf("stage has no name; please set 'name: <name>'"))
 	}
-	if s.RunnerType == RunnerTypeUnknown {
-		errors = append(errors, fmt.Errorf("unknown runner; please set 'runner: %v'", strings.Join(SupportedRunnerTypes.ToStringArray(), "|")))
-	}
-
-	switch s.RunnerType {
-	case RunnerTypeContainer:
-		if len(s.Stages) == 0 && s.Image == "" {
-			errors = append(errors, fmt.Errorf("stage has no image; please set 'image: <image>'"))
+	if len(s.Stages) == 0 {
+		if s.RunnerType == RunnerTypeUnknown {
+			errors = append(errors, fmt.Errorf("unknown runner; please set 'runner: %v'", strings.Join(SupportedRunnerTypes.ToStringArray(), "|")))
 		}
-	case RunnerTypeMetal:
-		if len(s.Stages) == 0 && s.Image != "" {
-			errors = append(errors, fmt.Errorf("stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'"))
+		if len(s.Commands) == 0 && !s.Detach {
+			warnings = append(warnings, fmt.Sprintf("stage has no commands; you might want to define at least one command through 'commands'"))
 		}
-	}
 
-	if len(s.Stages) == 0 && len(s.Commands) == 0 && !s.Detach {
-		errors = append(errors, fmt.Errorf("stage has no commands; define at least stage through 'commands'"))
+		switch s.RunnerType {
+		case RunnerTypeContainer:
+			if s.Image == "" {
+				errors = append(errors, fmt.Errorf("stage has no image; please set 'image: <image>'"))
+			}
+		case RunnerTypeMetal:
+			if s.Image != "" {
+				errors = append(errors, fmt.Errorf("stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'"))
+			}
+		}
 	}
 
 	for _, st := range s.Stages {

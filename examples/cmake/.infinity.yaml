@@ -1,0 +1,13 @@
+type: firmware
+language: c++
+name: hello-cmake
+
+build:
+  stages:
+  - name: build
+    image: jsalverda/gcc-cmake:11.1.0
+    commands:
+    - cmake -version
+    - cmake .
+    - make
+    - ./hello

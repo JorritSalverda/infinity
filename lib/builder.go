@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -285,9 +286,23 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	for _, d := range stage.Devices {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--device=%v", d))
 	}
-	for k, v := range stage.Env {
-		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--env=%v=%v", k, v))
+
+	// add parameters to envvars
+	env := stage.Env
+	for k, v := range stage.Parameters {
+		env[ToUpperSnakeCase("INFINITY_PARAMETER_"+k)] = fmt.Sprintf("%v", v)
 	}
+
+	// loop envvars in sorted order
+	envKeys := make([]string, 0, len(env))
+	for k := range env {
+		envKeys = append(envKeys, k)
+	}
+	sort.Strings(envKeys)
+	for _, k := range envKeys {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--env=%v=%v", k, env[k]))
+	}
+
 	if stage.Privileged {
 		dockerRunArgs = append(dockerRunArgs, "--privileged")
 	}

@@ -132,23 +132,6 @@ You can also use it to mount devices and in that way allow stages to control som
     - cat /dev/ttyUSB0
 ```
 
-### Bare metal runner
-
-In the exceptional case that a command can't run inside a Docker container a stage can be run with `runner: metal`; this runs the specified commands directly on the host operating system. The drawback of using this mode is that the build time dependencies either need to be preinstalled or get installed using the commands, leaving them behind on the host.
-
-```yaml
-  - name: upload
-    runner: metal
-    commands:
-    - apt-get update && apt-get install -y curl
-    - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.18.3
-    - arduino-cli core install arduino:avr 
-    - arduino-cli board list
-    - arduino-cli core list
-    - arduino-cli compile -b arduino:avr:uno sketches/blink
-    - arduino-cli upload -b arduino:avr:uno -p /dev/cu.usbserial-1460 sketches/blink
-```
-
 ### Parallel stages
 
 Regular stages run sequentially, but in order to speed up things you can run stages in parallel by nesting them inside a named containing stage:
@@ -188,6 +171,23 @@ In order to run containers in the background, for example to be used as a servic
     commands:
     # run schema updates and then integration tests against the database
     - sleep 20s
+```
+
+### Bare metal runner
+
+In the exceptional case that a command can't run inside a Docker container a stage can be run with `runner: metal`; this runs the specified commands directly on the host operating system. The drawback of using this mode is that the build time dependencies either need to be preinstalled or get installed using the commands, leaving them behind on the host.
+
+```yaml
+  - name: upload
+    runner: metal
+    commands:
+    - apt-get update && apt-get install -y curl
+    - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.18.3
+    - arduino-cli core install arduino:avr 
+    - arduino-cli board list
+    - arduino-cli core list
+    - arduino-cli compile -b arduino:avr:uno sketches/blink
+    - arduino-cli upload -b arduino:avr:uno -p /dev/cu.usbserial-1460 sketches/blink
 ```
 
 # Local development

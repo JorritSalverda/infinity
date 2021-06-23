@@ -186,4 +186,42 @@ func TestBuild(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
+	t.Run("PassesSnakeCasedEnvironmentVariableForEachStageParameter", func(t *testing.T) {
+
+		ctrl := gomock.NewController(t)
+
+		manifest := Manifest{
+			ApplicationType: ApplicationTypeAPI,
+			Language:        LanguageGo,
+			Name:            "test-app",
+			Build: ManifestBuild{
+				Stages: []*ManifestStage{
+					{
+						Name:     "stage-1",
+						Image:    "alpine:3.13",
+						Commands: []string{"sleep 1"},
+						Parameters: map[string]interface{}{
+							"vulnerabilityThreshold": "CRITICAL",
+							"containerName":          "mycontainer",
+						},
+					},
+				},
+			},
+		}
+		manifest.SetDefault()
+
+		manifestReader := NewMockManifestReader(ctrl)
+		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
+		commandRunner := NewMockCommandRunner(ctrl)
+		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"pull", "alpine:3.13"})).AnyTimes()
+		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", "--volume=/Users/jorrit/work/personal/infinity/lib:/work", "--workdir=/work", "--env=INFINITY_PARAMETER_CONTAINER_NAME=mycontainer", "--env=INFINITY_PARAMETER_VULNERABILITY_THRESHOLD=CRITICAL", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).Times(1)
+
+		builder := NewBuilder(manifestReader, commandRunner, false, ".infinity.yaml")
+
+		// act
+		err := builder.Build(context.Background())
+
+		assert.Nil(t, err)
+	})
+
 }
