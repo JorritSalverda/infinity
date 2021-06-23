@@ -204,6 +204,63 @@ In the exceptional case that a command can't run inside a Docker container a sta
     - arduino-cli upload -b arduino:avr:uno -p /dev/cu.usbserial-1460 sketches/blink
 ```
 
+### Stage parameters
+
+To make intermediate containers that are more friendly to be used than by passing commands you can set any property - outside of the reserved ones - and they will be passed on as environment variables in the form of `INFINITY_PARAMETER_<UPPER_SNAKE_CASE_VERSION_OF_PARAMETER_NAME>`.
+
+As an example a container could be created that supports the `action` parameter by using environment variable `INFINITY_PARAMETER_ACTION` inside the docker container.
+
+```yaml
+  - name: build-docker-container
+    image: jsalverda/docker:stable
+    action: build
+    container: web
+    tag: 1.0.0
+    privileged: true
+```
+
+The `jsalverda/docker:stable` container can be created with `Dockerfile`:
+
+```dockerfile
+FROM docker:20.10.7-dind
+
+COPY ./docker-entrypoint.sh /
+RUN chmod 500 /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+```
+
+And `docker-entrypoint.sh` that looks something like:
+
+```bash
+#!/bin/sh
+set -e
+
+# start docker daemon
+dockerd-entrypoint.sh &
+
+# wait for docker daemon to be ready
+while true ; do if [ -S /var/run/docker.sock ] ; then break ; fi ; sleep 3 ; done
+
+case "${INFINITY_PARAMETER_ACTION}" in
+  build)
+    docker build -t ${INFINITY_PARAMETER_CONTAINER}:${INFINITY_PARAMETER_TAG} .
+  ;;
+
+  push)
+    docker push ${INFINITY_PARAMETER_CONTAINER}:${INFINITY_PARAMETER_TAG}
+  ;;
+
+  scan)
+    docker scan ${INFINITY_PARAMETER_CONTAINER}:${INFINITY_PARAMETER_TAG}
+  ;;
+
+  *)
+    echo "action ${INFINITY_PARAMETER_ACTION} is not supported; use action: build|push|scan"
+    exit 1
+esac
+```
+
 # Local development
 
 You can either install `infinity` and run `infinity build`; this will compile and install the cli in the go binary folder. Or just run `go install` instead.
