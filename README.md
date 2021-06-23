@@ -208,7 +208,7 @@ In the exceptional case that a command can't run inside a Docker container a sta
 
 To make intermediate containers that are more friendly to be used than by passing commands you can set any property - outside of the reserved ones - and they will be passed on as environment variables in the form of `INFINITY_PARAMETER_<UPPER_SNAKE_CASE_VERSION_OF_PARAMETER_NAME>`.
 
-As an example a container could be created that supports the `action` parameter by using environment variable `INFINITY_PARAMETER_ACTION` inside the docker container.
+As an example a container could be created that supports the `action`, `container` and `tag` parameters by using environment variable `INFINITY_PARAMETER_ACTION`, `INFINITY_PARAMETER_CONTAINER` and `INFINITY_PARAMETER_TAG` inside the docker container.
 
 ```yaml
   - name: build-docker-container
