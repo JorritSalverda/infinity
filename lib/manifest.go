@@ -93,7 +93,7 @@ func (s *ManifestStage) Validate() (warnings []string, errors []error) {
 			errors = append(errors, fmt.Errorf("unknown runner; please set 'runner: %v'", strings.Join(SupportedRunnerTypes.ToStringArray(), "|")))
 		}
 		if len(s.Commands) == 0 && !s.Detach {
-			warnings = append(warnings, fmt.Sprintf("stage has no commands; you might want to define at least one command through 'commands'"))
+			warnings = append(warnings, "stage has no commands; you might want to define at least one command through 'commands'")
 		}
 
 		switch s.RunnerType {

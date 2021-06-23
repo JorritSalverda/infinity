@@ -2,6 +2,8 @@ package lib
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/alecthomas/assert"
@@ -45,16 +47,18 @@ func TestBuild(t *testing.T) {
 		}
 		manifest.SetDefault()
 
+		pwd, err := os.Getwd()
+		assert.Nil(t, err)
 		manifestReader := NewMockManifestReader(ctrl)
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		commandRunner := NewMockCommandRunner(ctrl)
 		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"pull", "alpine:3.13"})).AnyTimes()
-		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", "--volume=/Users/jorrit/work/personal/infinity/lib:/work", "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).Times(2)
+		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", fmt.Sprintf("--volume=%v:/work", pwd), "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).Times(2)
 
 		builder := NewBuilder(manifestReader, commandRunner, false, ".infinity.yaml")
 
 		// act
-		err := builder.Build(context.Background())
+		err = builder.Build(context.Background())
 
 		assert.Nil(t, err)
 	})
@@ -84,16 +88,18 @@ func TestBuild(t *testing.T) {
 		}
 		manifest.SetDefault()
 
+		pwd, err := os.Getwd()
+		assert.Nil(t, err)
 		manifestReader := NewMockManifestReader(ctrl)
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		commandRunner := NewMockCommandRunner(ctrl)
 		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"pull", "alpine:3.13"})).Times(1)
-		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", "--volume=/Users/jorrit/work/personal/infinity/lib:/work", "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).AnyTimes()
+		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", fmt.Sprintf("--volume=%v:/work", pwd), "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).AnyTimes()
 
 		builder := NewBuilder(manifestReader, commandRunner, false, ".infinity.yaml")
 
 		// act
-		err := builder.Build(context.Background())
+		err = builder.Build(context.Background())
 
 		assert.Nil(t, err)
 	})
@@ -128,16 +134,18 @@ func TestBuild(t *testing.T) {
 		}
 		manifest.SetDefault()
 
+		pwd, err := os.Getwd()
+		assert.Nil(t, err)
 		manifestReader := NewMockManifestReader(ctrl)
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		commandRunner := NewMockCommandRunner(ctrl)
 		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"pull", "alpine:3.13"})).AnyTimes()
-		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", "--volume=/Users/jorrit/work/personal/infinity/lib:/work", "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).Times(2)
+		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", fmt.Sprintf("--volume=%v:/work", pwd), "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).Times(2)
 
 		builder := NewBuilder(manifestReader, commandRunner, false, ".infinity.yaml")
 
 		// act
-		err := builder.Build(context.Background())
+		err = builder.Build(context.Background())
 
 		assert.Nil(t, err)
 	})
@@ -172,16 +180,18 @@ func TestBuild(t *testing.T) {
 		}
 		manifest.SetDefault()
 
+		pwd, err := os.Getwd()
+		assert.Nil(t, err)
 		manifestReader := NewMockManifestReader(ctrl)
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		commandRunner := NewMockCommandRunner(ctrl)
 		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"pull", "alpine:3.13"})).Times(1)
-		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", "--volume=/Users/jorrit/work/personal/infinity/lib:/work", "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).AnyTimes()
+		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", fmt.Sprintf("--volume=%v:/work", pwd), "--workdir=/work", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).AnyTimes()
 
 		builder := NewBuilder(manifestReader, commandRunner, false, ".infinity.yaml")
 
 		// act
-		err := builder.Build(context.Background())
+		err = builder.Build(context.Background())
 
 		assert.Nil(t, err)
 	})
@@ -210,18 +220,19 @@ func TestBuild(t *testing.T) {
 		}
 		manifest.SetDefault()
 
+		pwd, err := os.Getwd()
+		assert.Nil(t, err)
 		manifestReader := NewMockManifestReader(ctrl)
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		commandRunner := NewMockCommandRunner(ctrl)
 		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"pull", "alpine:3.13"})).AnyTimes()
-		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", "--volume=/Users/jorrit/work/personal/infinity/lib:/work", "--workdir=/work", "--env=INFINITY_PARAMETER_CONTAINER_NAME=mycontainer", "--env=INFINITY_PARAMETER_VULNERABILITY_THRESHOLD=CRITICAL", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).Times(1)
+		commandRunner.EXPECT().RunCommandWithLogger(gomock.Any(), gomock.Any(), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", fmt.Sprintf("--volume=%v:/work", pwd), "--workdir=/work", "--env=INFINITY_PARAMETER_CONTAINER_NAME=mycontainer", "--env=INFINITY_PARAMETER_VULNERABILITY_THRESHOLD=CRITICAL", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf "\033[38;5;244m> sleep 1\033[0m\n" ; sleep 1`})).Times(1)
 
 		builder := NewBuilder(manifestReader, commandRunner, false, ".infinity.yaml")
 
 		// act
-		err := builder.Build(context.Background())
+		err = builder.Build(context.Background())
 
 		assert.Nil(t, err)
 	})
-
 }
