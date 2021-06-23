@@ -32,6 +32,20 @@ go install github.com/JorritSalverda/infinity
 
 # Usage
 
+## Basics
+
+To check what commands are available for the _infinity_ cli run
+
+```
+infinity help
+```
+
+And to check the installed version run
+
+```
+infinity version
+```
+
 ## Scaffolding a new application build manifest
 
 In order to create an `.infinity.yaml` build template run the following:
@@ -183,7 +197,7 @@ In the exceptional case that a command can't run inside a Docker container a sta
     commands:
     - apt-get update && apt-get install -y curl
     - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.18.3
-    - arduino-cli core install arduino:avr 
+    - arduino-cli core install arduino:avr
     - arduino-cli board list
     - arduino-cli core list
     - arduino-cli compile -b arduino:avr:uno sketches/blink
@@ -208,3 +222,22 @@ shasum -a 256 infinity-${INFINITY_VERSION}-darwin-amd64.zip
 ```
 
 Then create a release with the version as tag and release title and add the zip file as attached file. Then update `url`, `sha256`, `version` and `install` in the `Formula/infinity.rb` file in repository [github.com/JorritSalverda/homebrew-core](https://github.com/JorritSalverda/homebrew-core). Once it's pushed to Github you can run `brew upgrade` to get the latest version on your machine.
+
+# Manifest reference
+
+| property                  | description                                                                                                                                                                                                                  | allowed values                     | default     |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ----------- |
+| application               | application type metadata for use in a centralized _infinity_ CI/CD system                                                                                                                                                   | `library|cli|firmware|api|web`     |             |
+| language                  | language metadata for use in a centralized _infinity_ CI/CD system                                                                                                                                                           | `go|c|c++|java|csharp|python|node` |             |
+| name                      | unique name for the application for use in a centralized _infinity_ CI/CD system                                                                                                                                             | `string`                           |             |
+| build.stages[].name       | name for the stage                                                                                                                                                                                                           | `string`                           |             |
+| build.stages[].runner     | runner type for the stage                                                                                                                                                                                                    | `container|metal`                  | `container` |
+| build.stages[].image      | docker container image path for the image to run the stage commands in                                                                                                                                                       | `string`                           |             |
+| build.stages[].detach     | run stage in detached mode, to provide a service in the background                                                                                                                                                           | `true|false`                       | `false`     |
+| build.stages[].privileged | run stage in privileged mode, to allow more privileges to the host operating system                                                                                                                                          | `true|false`                       | `false`     |
+| build.stages[].mounts     | array of volumes to mount, with source and target folder separated by `:`                                                                                                                                                    | `[]string`                         |             |
+| build.stages[].devices    | array of devices to mount, with source and target device path separated by `:`                                                                                                                                               | `[]string`                         |             |
+| build.stages[].env        | map of environment value keys and values to allow setting envvars in a stage                                                                                                                                                 | `map[string]string`                |             |
+| build.stages[].devices    | array of commands to execute inside the stage container or on bare metal                                                                                                                                                     | `[]string`                         |             |
+| build.stages[].stages     | array of nested stages that are executed in parallel to speed up total build time                                                                                                                                            | `[]stage`                          |             |
+| build.stages[].*          | any other property set on the stage is passed as an environment variable in the form of `INFINITY_PARAMETER_<UPPER_SNAKE_CASE_VERSION_OF_PARAMETER_NAME>` to allow for more friendly configuration of a prepared stage image |                                    |             |
