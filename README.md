@@ -190,6 +190,7 @@ In order to run containers in the background, for example to be used as a servic
   - name: cockroachdb-as-service
     image: cockroachdb/cockroach:v21.1.2
     detach: true
+    mount: false
     env:
       COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING: "true"
     commands:
@@ -200,6 +201,8 @@ In order to run containers in the background, for example to be used as a servic
     # run schema updates and then integration tests against the database
     - sleep 20s
 ```
+
+Do note `mount: false` in order to prevent the working directory from getting mounted; in this particular instance the _cockroachdb_ container doesn't need access to any of the files in the working directory.
 
 ### Bare metal runner
 
