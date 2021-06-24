@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -22,6 +23,7 @@ type builder struct {
 	manifestReader          ManifestReader
 	commandRunner           CommandRunner
 	verbose                 bool
+	buildDirectory          string
 	buildManifestFilename   string
 	pulledImages            map[string]struct{}
 	pulledImagesMutex       *MapMutex
@@ -29,10 +31,11 @@ type builder struct {
 	detachedContainersMutex *MapMutex
 }
 
-func NewBuilder(manifestReader ManifestReader, commandRunner CommandRunner, verbose bool, buildManifestFilename string) Builder {
+func NewBuilder(manifestReader ManifestReader, commandRunner CommandRunner, verbose bool, buildDirectory, buildManifestFilename string) Builder {
 	return &builder{
 		manifestReader:          manifestReader,
 		commandRunner:           commandRunner,
+		buildDirectory:          buildDirectory,
 		buildManifestFilename:   buildManifestFilename,
 		verbose:                 verbose,
 		pulledImages:            make(map[string]struct{}),
@@ -45,7 +48,9 @@ func NewBuilder(manifestReader ManifestReader, commandRunner CommandRunner, verb
 func (b *builder) Validate(ctx context.Context) (manifest Manifest, err error) {
 	log.Printf("Validating manifest %v", aurora.BrightBlue(b.buildManifestFilename))
 
-	manifest, err = b.manifestReader.GetManifest(ctx, b.buildManifestFilename)
+	manifestPath := filepath.Join(b.buildDirectory, b.buildManifestFilename)
+
+	manifest, err = b.manifestReader.GetManifest(ctx, manifestPath)
 	if err != nil {
 		return
 	}
@@ -209,7 +214,7 @@ func (b *builder) terminateDetachedContainer(ctx context.Context, stage Manifest
 		if b.verbose {
 			logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerStopArgs, " "))
 		}
-		errorChannel <- b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerStopArgs)
+		errorChannel <- b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerStopArgs)
 	}()
 
 	// tail logs
@@ -223,7 +228,7 @@ func (b *builder) terminateDetachedContainer(ctx context.Context, stage Manifest
 		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerLogsArgs, " "))
 	}
 
-	err = b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerLogsArgs)
+	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerLogsArgs)
 	if err != nil {
 		return
 	}
@@ -253,7 +258,7 @@ func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage M
 	logger.Printf(aurora.Gray(12, "Pulling image %v").String(), aurora.BrightBlue(stage.Image))
 
 	start := time.Now()
-	err = b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerPullArgs)
+	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerPullArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
@@ -268,7 +273,8 @@ func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage M
 }
 
 func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
-	pwd, err := os.Getwd()
+
+	pwd, err := filepath.Abs(b.buildDirectory)
 	if err != nil {
 		return
 	}
@@ -277,9 +283,13 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	dockerRunArgs := []string{
 		"run",
 		"--rm",
-		fmt.Sprintf("--volume=%v:%v", pwd, stage.WorkingDirectory),
-		fmt.Sprintf("--workdir=%v", stage.WorkingDirectory),
 	}
+
+	if stage.MountWorkingDirectory != nil && *stage.MountWorkingDirectory {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v:%v", pwd, stage.WorkingDirectory))
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--workdir=%v", stage.WorkingDirectory))
+	}
+
 	for _, v := range stage.Volumes {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", v))
 	}
@@ -338,7 +348,7 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 		logger.Printf(aurora.Gray(12, "Starting detached stage").String())
 
 		start := time.Now()
-		containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, dockerCommand, dockerRunArgs)
+		containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, "", dockerCommand, dockerRunArgs)
 		elapsed := time.Since(start)
 		if err != nil {
 			logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
@@ -360,7 +370,7 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	logger.Printf(aurora.Gray(12, "Executing commands").String())
 
 	start := time.Now()
-	err = b.commandRunner.RunCommandWithLogger(ctx, logger, dockerCommand, dockerRunArgs)
+	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerRunArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
@@ -381,7 +391,7 @@ func (b *builder) metalRun(ctx context.Context, logger *log.Logger, stage Manife
 		logger.Printf(aurora.Gray(12, "> %v").String(), c)
 
 		splitCommands := strings.Split(c, " ")
-		err = b.commandRunner.RunCommandWithLogger(ctx, logger, splitCommands[0], splitCommands[1:])
+		err = b.commandRunner.RunCommandWithLogger(ctx, logger, b.buildDirectory, splitCommands[0], splitCommands[1:])
 		if err != nil {
 			break
 		}

@@ -275,6 +275,17 @@ case "${INFINITY_PARAMETER_ACTION}" in
 esac
 ```
 
+# Examples
+
+In the `examples` directory you can find the following examples highlighting specific features:
+
+| example     | shows...                                                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| arduino-uno | ...how to mount devices with the default container runner and how to use the (bare) metal runner                                                     |
+| cmake       | ...the use of an intermediate docker builder image with prepared build time dependencies for improved performance                                    |
+| db-test     | ...how to use detached stages to provide a service to other stages                                                                                   |
+| web         | ...splitting commands with same image into multiples stages for better visibility of time spent in each command; shows how a dockerfile can be built |
+
 # Local development
 
 You can either install `infinity` and run `infinity build`; this will compile and install the cli in the go binary folder. Or just run `go install` instead.
@@ -306,6 +317,7 @@ Then create a release with the version as tag and release title and add the zip 
 | `build.stages[].image`      | docker container image path for the image to run the stage commands in                                                                                                                                                       | `string`                                 |             |
 | `build.stages[].detach`     | run stage in detached mode, to provide a service in the background                                                                                                                                                           | `true\|false`                            | `false`     |
 | `build.stages[].privileged` | run stage in privileged mode, to allow more privileges to the host operating system                                                                                                                                          | `true\|false`                            | `false`     |
+| `build.stages[].mount`      | mount the working directory into the stage container                                                                                                                                                                         | `true\|false`                            | `true`      |
 | `build.stages[].work`       | directory to which the working copy gets mounted                                                                                                                                                                             | `string`                                 | `/work`     |
 | `build.stages[].volumes`    | array of volumes to mount, with source and target folder separated by `:`                                                                                                                                                    | `[]string`                               |             |
 | `build.stages[].devices`    | array of devices to mount, with source and target device path separated by `:`                                                                                                                                               | `[]string`                               |             |

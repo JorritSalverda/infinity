@@ -11,8 +11,8 @@ import (
 
 //go:generate mockgen -package=lib -destination ./command_runner_mock.go -source=command_runner.go
 type CommandRunner interface {
-	RunCommandWithLogger(ctx context.Context, logger *log.Logger, command string, args []string) (err error)
-	RunCommandWithOutput(ctx context.Context, command string, args []string) (output []byte, err error)
+	RunCommandWithLogger(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error)
+	RunCommandWithOutput(ctx context.Context, dir, command string, args []string) (output []byte, err error)
 }
 
 type commandRunner struct {
@@ -22,9 +22,10 @@ func NewCommandRunner() CommandRunner {
 	return &commandRunner{}
 }
 
-func (c *commandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Logger, command string, args []string) (err error) {
+func (c *commandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error) {
 	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Env = os.Environ()
+	cmd.Dir = dir
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -55,9 +56,10 @@ func (c *commandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Lo
 	return nil
 }
 
-func (c *commandRunner) RunCommandWithOutput(ctx context.Context, command string, args []string) (output []byte, err error) {
+func (c *commandRunner) RunCommandWithOutput(ctx context.Context, dir, command string, args []string) (output []byte, err error) {
 	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Env = os.Environ()
+	cmd.Dir = dir
 
 	return cmd.CombinedOutput()
 }

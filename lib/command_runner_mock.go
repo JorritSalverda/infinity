@@ -6,60 +6,59 @@ package lib
 
 import (
 	context "context"
+	gomock "github.com/golang/mock/gomock"
 	log "log"
 	reflect "reflect"
-
-	gomock "github.com/golang/mock/gomock"
 )
 
-// MockCommandRunner is a mock of CommandRunner interface.
+// MockCommandRunner is a mock of CommandRunner interface
 type MockCommandRunner struct {
 	ctrl     *gomock.Controller
 	recorder *MockCommandRunnerMockRecorder
 }
 
-// MockCommandRunnerMockRecorder is the mock recorder for MockCommandRunner.
+// MockCommandRunnerMockRecorder is the mock recorder for MockCommandRunner
 type MockCommandRunnerMockRecorder struct {
 	mock *MockCommandRunner
 }
 
-// NewMockCommandRunner creates a new mock instance.
+// NewMockCommandRunner creates a new mock instance
 func NewMockCommandRunner(ctrl *gomock.Controller) *MockCommandRunner {
 	mock := &MockCommandRunner{ctrl: ctrl}
 	mock.recorder = &MockCommandRunnerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockCommandRunner) EXPECT() *MockCommandRunnerMockRecorder {
 	return m.recorder
 }
 
-// RunCommandWithLogger mocks base method.
-func (m *MockCommandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Logger, command string, args []string) error {
+// RunCommandWithLogger mocks base method
+func (m *MockCommandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Logger, dir, command string, args []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunCommandWithLogger", ctx, logger, command, args)
+	ret := m.ctrl.Call(m, "RunCommandWithLogger", ctx, logger, dir, command, args)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RunCommandWithLogger indicates an expected call of RunCommandWithLogger.
-func (mr *MockCommandRunnerMockRecorder) RunCommandWithLogger(ctx, logger, command, args interface{}) *gomock.Call {
+// RunCommandWithLogger indicates an expected call of RunCommandWithLogger
+func (mr *MockCommandRunnerMockRecorder) RunCommandWithLogger(ctx, logger, dir, command, args interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithLogger", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithLogger), ctx, logger, command, args)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithLogger", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithLogger), ctx, logger, dir, command, args)
 }
 
-// RunCommandWithOutput mocks base method.
-func (m *MockCommandRunner) RunCommandWithOutput(ctx context.Context, command string, args []string) ([]byte, error) {
+// RunCommandWithOutput mocks base method
+func (m *MockCommandRunner) RunCommandWithOutput(ctx context.Context, dir, command string, args []string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunCommandWithOutput", ctx, command, args)
+	ret := m.ctrl.Call(m, "RunCommandWithOutput", ctx, dir, command, args)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RunCommandWithOutput indicates an expected call of RunCommandWithOutput.
-func (mr *MockCommandRunnerMockRecorder) RunCommandWithOutput(ctx, command, args interface{}) *gomock.Call {
+// RunCommandWithOutput indicates an expected call of RunCommandWithOutput
+func (mr *MockCommandRunnerMockRecorder) RunCommandWithOutput(ctx, dir, command, args interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithOutput", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithOutput), ctx, command, args)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithOutput", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithOutput), ctx, dir, command, args)
 }

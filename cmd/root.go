@@ -12,6 +12,7 @@ var (
 		Short: "Infinity is a CLI to easily build your applications using a pipeline as code",
 	}
 	verboseFlag               bool
+	buildDirectoryFlag        string
 	buildManifestFilenameFlag string
 
 	version = "v0.0.0"
@@ -24,6 +25,7 @@ func Execute(ctx context.Context) error {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verboseFlag, "verbose", "v", false, "Enable verbose logging")
+	rootCmd.PersistentFlags().StringVarP(&buildDirectoryFlag, "directory", "d", "", "Directory path containing manifest file")
 	rootCmd.PersistentFlags().StringVarP(&buildManifestFilenameFlag, "manifest", "m", ".infinity.yaml", "Manifest file name")
 
 	rootCmd.AddCommand(scaffoldCmd)

@@ -59,23 +59,28 @@ func (b *ManifestBuild) Validate() (warnings []string, errors []error) {
 }
 
 type ManifestStage struct {
-	Name             string                 `yaml:"name,omitempty" json:"name,omitempty"`
-	RunnerType       RunnerType             `yaml:"runner,omitempty" json:"runner,omitempty"`
-	Image            string                 `yaml:"image,omitempty" json:"image,omitempty"`
-	Detach           bool                   `yaml:"detach,omitempty" json:"detach,omitempty"`
-	Privileged       bool                   `yaml:"privileged,omitempty" json:"privileged,omitempty"`
-	WorkingDirectory string                 `yaml:"work,omitempty" json:"work,omitempty"`
-	Volumes          []string               `yaml:"volumes,omitempty" json:"volumes,omitempty"`
-	Devices          []string               `yaml:"devices,omitempty" json:"devices,omitempty"`
-	Env              map[string]string      `yaml:"env,omitempty" json:"env,omitempty"`
-	Commands         []string               `yaml:"commands,omitempty" json:"commands,omitempty"`
-	Stages           []*ManifestStage       `yaml:"stages,omitempty" json:"stages,omitempty"`
-	Parameters       map[string]interface{} `yaml:",inline"`
+	Name                  string                 `yaml:"name,omitempty" json:"name,omitempty"`
+	RunnerType            RunnerType             `yaml:"runner,omitempty" json:"runner,omitempty"`
+	Image                 string                 `yaml:"image,omitempty" json:"image,omitempty"`
+	Detach                bool                   `yaml:"detach,omitempty" json:"detach,omitempty"`
+	Privileged            bool                   `yaml:"privileged,omitempty" json:"privileged,omitempty"`
+	MountWorkingDirectory *bool                  `yaml:"mount,omitempty" json:"mount,omitempty"`
+	WorkingDirectory      string                 `yaml:"work,omitempty" json:"work,omitempty"`
+	Volumes               []string               `yaml:"volumes,omitempty" json:"volumes,omitempty"`
+	Devices               []string               `yaml:"devices,omitempty" json:"devices,omitempty"`
+	Env                   map[string]string      `yaml:"env,omitempty" json:"env,omitempty"`
+	Commands              []string               `yaml:"commands,omitempty" json:"commands,omitempty"`
+	Stages                []*ManifestStage       `yaml:"stages,omitempty" json:"stages,omitempty"`
+	Parameters            map[string]interface{} `yaml:",inline"`
 }
 
 func (s *ManifestStage) SetDefault() {
 	if s.RunnerType == RunnerTypeUnknown {
 		s.RunnerType = RunnerTypeContainer
+	}
+	if s.MountWorkingDirectory == nil {
+		defaultValue := true
+		s.MountWorkingDirectory = &defaultValue
 	}
 	if s.WorkingDirectory == "" {
 		s.WorkingDirectory = "/work"
@@ -93,6 +98,9 @@ func (s *ManifestStage) Validate() (warnings []string, errors []error) {
 		errors = append(errors, fmt.Errorf("stage has no name; please set 'name: <name>'"))
 	}
 	if len(s.Stages) == 0 {
+		if s.MountWorkingDirectory == nil {
+			errors = append(errors, fmt.Errorf("mountWork has no value; please set 'mountWork: true|false'"))
+		}
 		if s.WorkingDirectory == "" {
 			errors = append(errors, fmt.Errorf("stage has no working directory; please set 'work: <working directory>'"))
 		}
