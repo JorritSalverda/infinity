@@ -130,6 +130,28 @@ func TestSetDefaultForManifestStage(t *testing.T) {
 		assert.Equal(t, RunnerTypeMetal, stage.RunnerType)
 	})
 
+	t.Run("DefaultsWorkingDirectoryToWorkIfEmpty", func(t *testing.T) {
+		stage := ManifestStage{
+			WorkingDirectory: "",
+		}
+
+		// act
+		stage.SetDefault()
+
+		assert.Equal(t, "/work", stage.WorkingDirectory)
+	})
+
+	t.Run("KeepsWorkingDirectoryIfNotEmpty", func(t *testing.T) {
+		stage := ManifestStage{
+			WorkingDirectory: "/go/src/github.com/JorritSalverda/infinity",
+		}
+
+		// act
+		stage.SetDefault()
+
+		assert.Equal(t, "/go/src/github.com/JorritSalverda/infinity", stage.WorkingDirectory)
+	})
+
 	t.Run("DefaultsEnvToEmptyMapIfNil", func(t *testing.T) {
 		stage := ManifestStage{
 			Env: nil,
@@ -176,6 +198,17 @@ func TestValidateForManifestStage(t *testing.T) {
 
 		assert.Equal(t, 1, len(errors))
 		assert.Equal(t, "stage has no name; please set 'name: <name>'", errors[0].Error())
+	})
+
+	t.Run("ReturnsErrorIfWorkingDirectoryIsEmpty", func(t *testing.T) {
+		stage := getValidManifestStage()
+		stage.WorkingDirectory = ""
+
+		// act
+		_, errors := stage.Validate()
+
+		assert.Equal(t, 1, len(errors))
+		assert.Equal(t, "stage has no working directory; please set 'work: <working directory>'", errors[0].Error())
 	})
 
 	t.Run("ReturnsErrorIfRunnerTypeIsUnknown", func(t *testing.T) {
@@ -274,7 +307,7 @@ func TestValidateForManifestStage(t *testing.T) {
 func getValidManifest() Manifest {
 	stage := getValidManifestStage()
 
-	return Manifest{
+	manifest := Manifest{
 		ApplicationType: ApplicationTypeAPI,
 		Language:        LanguageGo,
 		Name:            ":myapp",
@@ -284,15 +317,20 @@ func getValidManifest() Manifest {
 			},
 		},
 	}
+	manifest.SetDefault()
+
+	return manifest
 }
 
 func getValidManifestStage() ManifestStage {
-	return ManifestStage{
-		Name:       "stage-1",
-		RunnerType: RunnerTypeContainer,
-		Image:      "jsalverda/arduino-cli:0.18.3",
+	stage := ManifestStage{
+		Name:  "stage-1",
+		Image: "jsalverda/arduino-cli:0.18.3",
 		Commands: []string{
 			"arduino-cli board list",
 		},
 	}
+	stage.SetDefault()
+
+	return stage
 }

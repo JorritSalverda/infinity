@@ -277,8 +277,8 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	dockerRunArgs := []string{
 		"run",
 		"--rm",
-		fmt.Sprintf("--volume=%v:/work", pwd),
-		"--workdir=/work",
+		fmt.Sprintf("--volume=%v:%v", pwd, stage.WorkingDirectory),
+		fmt.Sprintf("--workdir=%v", stage.WorkingDirectory),
 	}
 	for _, v := range stage.Volumes {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--volume=%v", v))
