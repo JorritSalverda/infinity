@@ -20,28 +20,28 @@ type Builder interface {
 }
 
 type builder struct {
-	manifestReader          ManifestReader
-	commandRunner           CommandRunner
-	verbose                 bool
-	buildDirectory          string
-	buildManifestFilename   string
-	pulledImages            map[string]struct{}
-	pulledImagesMutex       *MapMutex
-	detachedContainers      map[*ManifestStage]string
-	detachedContainersMutex *MapMutex
+	manifestReader         ManifestReader
+	commandRunner          CommandRunner
+	verbose                bool
+	buildDirectory         string
+	buildManifestFilename  string
+	pulledImages           map[string]struct{}
+	pulledImagesMutex      *MapMutex
+	runningContainers      map[string]ManifestStage
+	runningContainersMutex *MapMutex
 }
 
 func NewBuilder(manifestReader ManifestReader, commandRunner CommandRunner, verbose bool, buildDirectory, buildManifestFilename string) Builder {
 	return &builder{
-		manifestReader:          manifestReader,
-		commandRunner:           commandRunner,
-		buildDirectory:          buildDirectory,
-		buildManifestFilename:   buildManifestFilename,
-		verbose:                 verbose,
-		pulledImages:            make(map[string]struct{}),
-		pulledImagesMutex:       NewMapMutex(),
-		detachedContainers:      make(map[*ManifestStage]string),
-		detachedContainersMutex: NewMapMutex(),
+		manifestReader:         manifestReader,
+		commandRunner:          commandRunner,
+		buildDirectory:         buildDirectory,
+		buildManifestFilename:  buildManifestFilename,
+		verbose:                verbose,
+		pulledImages:           make(map[string]struct{}),
+		pulledImagesMutex:      NewMapMutex(),
+		runningContainers:      make(map[string]ManifestStage),
+		runningContainersMutex: NewMapMutex(),
 	}
 }
 
@@ -100,7 +100,7 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 	log.Println("")
 
 	defer func() {
-		terminateErr := b.terminateDetachedContainers(ctx)
+		terminateErr := b.stopRunningContainers(ctx)
 		if err == nil {
 			err = terminateErr
 		}
@@ -133,7 +133,19 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 		}
 
 		// docker run <image> <commands>
-		return b.containerRun(ctx, logger, stage)
+		var containerID string
+		containerID, err = b.containerStart(ctx, logger, stage)
+		if err != nil {
+			return
+		}
+
+		if stage.Detach {
+			// tailing logs happens when all stages are done
+			return nil
+		}
+
+		return b.containerLogs(ctx, logger, stage, containerID)
+
 	case RunnerTypeMetal:
 		return b.metalRun(ctx, logger, stage)
 	}
@@ -165,20 +177,37 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (e
 	return nil
 }
 
-func (b *builder) terminateDetachedContainers(ctx context.Context) (err error) {
+func (b *builder) stopRunningContainers(ctx context.Context) (err error) {
 
-	if len(b.detachedContainers) > 0 {
-		log.Printf("Terminating %v detached stage containers\n\n", len(b.detachedContainers))
+	if len(b.runningContainers) > 0 {
+		log.Printf("Terminating %v running stage containers\n\n", len(b.runningContainers))
 
-		semaphore := NewSemaphore(len(b.detachedContainers))
-		errorChannel := make(chan error, len(b.detachedContainers))
+		semaphore := NewSemaphore(len(b.runningContainers))
+		errorChannel := make(chan error, len(b.runningContainers))
 
-		for stage, containerID := range b.detachedContainers {
+		for containerID, stage := range b.runningContainers {
 			semaphore.Acquire()
 			go func(ctx context.Context, stage ManifestStage, containerID string) {
 				defer semaphore.Release()
-				errorChannel <- b.terminateDetachedContainer(ctx, stage, containerID)
-			}(ctx, *stage, containerID)
+
+				logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
+
+				stopErrorChannel := make(chan error)
+				go func() {
+					stopErrorChannel <- b.containerStop(ctx, logger, stage, containerID)
+				}()
+
+				err = b.containerLogs(ctx, logger, stage, containerID)
+				if err != nil {
+					errorChannel <- err
+				}
+
+				// wait until stop finishes
+				err = <-stopErrorChannel
+				if err != nil {
+					errorChannel <- err
+				}
+			}(ctx, stage, containerID)
 		}
 
 		semaphore.Wait()
@@ -195,45 +224,6 @@ func (b *builder) terminateDetachedContainers(ctx context.Context) (err error) {
 
 	return nil
 
-}
-
-func (b *builder) terminateDetachedContainer(ctx context.Context, stage ManifestStage, containerID string) (err error) {
-
-	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
-
-	errorChannel := make(chan error)
-
-	go func() {
-		// stop container
-		dockerCommand := "docker"
-		dockerStopArgs := []string{
-			"stop",
-			"--time=30",
-			containerID,
-		}
-		if b.verbose {
-			logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerStopArgs, " "))
-		}
-		errorChannel <- b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerStopArgs)
-	}()
-
-	// tail logs
-	dockerCommand := "docker"
-	dockerLogsArgs := []string{
-		"logs",
-		"--follow",
-		containerID,
-	}
-	if b.verbose {
-		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerLogsArgs, " "))
-	}
-
-	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerLogsArgs)
-	if err != nil {
-		return
-	}
-
-	return <-errorChannel
 }
 
 func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
@@ -272,7 +262,7 @@ func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage M
 	return nil
 }
 
-func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage ManifestStage) (containerID string, err error) {
 
 	pwd, err := filepath.Abs(b.buildDirectory)
 	if err != nil {
@@ -283,6 +273,7 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	dockerRunArgs := []string{
 		"run",
 		"--rm",
+		"--detach",
 	}
 
 	if stage.MountWorkingDirectory != nil && *stage.MountWorkingDirectory {
@@ -316,9 +307,6 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 	if stage.Privileged {
 		dockerRunArgs = append(dockerRunArgs, "--privileged")
 	}
-	if stage.Detach {
-		dockerRunArgs = append(dockerRunArgs, "--detach")
-	}
 	if len(stage.Commands) > 0 {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--entrypoint=%v", "/bin/sh"))
 	}
@@ -346,40 +334,86 @@ func (b *builder) containerRun(ctx context.Context, logger *log.Logger, stage Ma
 
 	if stage.Detach {
 		logger.Printf(aurora.Gray(12, "Starting detached stage").String())
+	}
 
-		start := time.Now()
-		containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, "", dockerCommand, dockerRunArgs)
-		elapsed := time.Since(start)
-		if err != nil {
-			logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
-			return err
-		}
+	start := time.Now()
+	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, "", dockerCommand, dockerRunArgs)
+	elapsed := time.Since(start)
+	if err != nil {
+		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
+		return
+	}
+
+	containerID = strings.TrimSuffix(string(containerIDBytes), "\n")
+
+	b.addRunningContainer(stage, containerID)
+
+	if stage.Detach {
 		logger.Printf(aurora.Gray(12, "Started in %v").String(), aurora.BrightGreen(elapsed.String()))
+	}
 
-		containerID := string(containerIDBytes)
-		containerID = strings.TrimSuffix(containerID, "\n")
+	return
+}
 
-		b.detachedContainersMutex.Lock(stage.Name)
-		defer b.detachedContainersMutex.Unlock(stage.Name)
+func (b *builder) containerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
 
-		b.detachedContainers[&stage] = containerID
-
-		return nil
+	// tail logs
+	dockerCommand := "docker"
+	dockerLogsArgs := []string{
+		"logs",
+		"--follow",
+		containerID,
+	}
+	if b.verbose {
+		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerLogsArgs, " "))
 	}
 
 	logger.Printf(aurora.Gray(12, "Executing commands").String())
 
 	start := time.Now()
-	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerRunArgs)
+	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerLogsArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("stage %v failed: %w", stage.Name, err)
 	}
-	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
+
+	if !stage.Detach {
+		logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
+	}
+
+	b.removeRunningContainer(stage, containerID)
 
 	return nil
+}
+
+func (b *builder) containerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
+	dockerCommand := "docker"
+	dockerStopArgs := []string{
+		"stop",
+		"--time=30",
+		containerID,
+	}
+	if b.verbose {
+		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerStopArgs, " "))
+	}
+
+	return b.commandRunner.RunCommandWithLogger(context.Background(), logger, "", dockerCommand, dockerStopArgs)
+}
+
+func (b *builder) addRunningContainer(stage ManifestStage, containerID string) {
+	// add container id to running containers map
+	b.runningContainersMutex.Lock(stage.Name)
+	defer b.runningContainersMutex.Unlock(stage.Name)
+	b.runningContainers[containerID] = stage
+}
+
+func (b *builder) removeRunningContainer(stage ManifestStage, containerID string) {
+	// remove container from map
+	b.runningContainersMutex.Lock(stage.Name)
+	defer b.runningContainersMutex.Unlock(stage.Name)
+	delete(b.runningContainers, containerID)
 }
 
 func (b *builder) metalRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
