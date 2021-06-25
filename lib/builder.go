@@ -22,26 +22,29 @@ type Builder interface {
 type builder struct {
 	manifestReader         ManifestReader
 	commandRunner          CommandRunner
-	verbose                bool
 	buildDirectory         string
 	buildManifestFilename  string
 	pulledImages           map[string]struct{}
 	pulledImagesMutex      *MapMutex
 	runningContainers      map[string]ManifestStage
 	runningContainersMutex *MapMutex
+	networkName            string
 }
 
-func NewBuilder(manifestReader ManifestReader, commandRunner CommandRunner, verbose bool, buildDirectory, buildManifestFilename string) Builder {
+func NewBuilder(manifestReader ManifestReader, commandRunner CommandRunner, randomStringGenerator RandomStringGenerator, buildDirectory, buildManifestFilename string) Builder {
+
+	networkName := fmt.Sprintf("infinity-%v", randomStringGenerator.GenerateRandomString(10))
+
 	return &builder{
 		manifestReader:         manifestReader,
 		commandRunner:          commandRunner,
 		buildDirectory:         buildDirectory,
 		buildManifestFilename:  buildManifestFilename,
-		verbose:                verbose,
 		pulledImages:           make(map[string]struct{}),
 		pulledImagesMutex:      NewMapMutex(),
 		runningContainers:      make(map[string]ManifestStage),
 		runningContainersMutex: NewMapMutex(),
+		networkName:            networkName,
 	}
 }
 
@@ -99,15 +102,31 @@ func (b *builder) Build(ctx context.Context) (err error) {
 func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error) {
 	log.Println("")
 
+	needsNetwork := b.needsNetwork(manifest.Build.Stages)
+
+	if needsNetwork {
+		err = b.networkCreate(ctx)
+		if err != nil {
+			return
+		}
+	}
+
 	defer func() {
 		terminateErr := b.stopRunningContainers(ctx)
 		if err == nil {
 			err = terminateErr
 		}
+
+		if needsNetwork {
+			terminateErr = b.networkRemove(ctx)
+			if err == nil {
+				err = terminateErr
+			}
+		}
 	}()
 
 	for _, stage := range manifest.Build.Stages {
-		err = b.runStage(ctx, *stage)
+		err = b.runStage(ctx, *stage, needsNetwork)
 		log.Println("")
 		if err != nil {
 			return
@@ -117,7 +136,7 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 	return nil
 }
 
-func (b *builder) runStage(ctx context.Context, stage ManifestStage, prefixes ...string) (err error) {
+func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwork bool, prefixes ...string) (err error) {
 
 	prefixes = append(prefixes, stage.Name)
 	prefix := strings.Join(prefixes, "] [")
@@ -125,7 +144,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, prefixes ..
 	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", prefix)).String(), 0)
 
 	if len(stage.Stages) > 0 {
-		return b.runParallelStages(ctx, stage)
+		return b.runParallelStages(ctx, stage, needsNetwork)
 	}
 
 	switch stage.RunnerType {
@@ -139,7 +158,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, prefixes ..
 		// docker run <image> <commands>
 		var containerID string
 		var start time.Time
-		containerID, start, err = b.containerStart(ctx, logger, stage)
+		containerID, start, err = b.containerStart(ctx, logger, stage, needsNetwork)
 		if err != nil {
 			return
 		}
@@ -158,7 +177,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, prefixes ..
 	return fmt.Errorf("runner %v is not supported", stage.RunnerType)
 }
 
-func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (err error) {
+func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage, needsNetwork bool) (err error) {
 	semaphore := NewSemaphore(len(stage.Stages))
 	errorChannel := make(chan error, len(stage.Stages))
 
@@ -166,7 +185,7 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (e
 		semaphore.Acquire()
 		go func(ctx context.Context, s ManifestStage) {
 			defer semaphore.Release()
-			errorChannel <- b.runStage(ctx, s, stage.Name)
+			errorChannel <- b.runStage(ctx, s, needsNetwork, stage.Name)
 		}(ctx, *s)
 	}
 
@@ -246,14 +265,11 @@ func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage M
 		"pull",
 		stage.Image,
 	}
-	if b.verbose {
-		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerPullArgs, " "))
-	}
 
 	logger.Printf(aurora.Gray(12, "Pulling image %v").String(), aurora.BrightBlue(stage.Image))
 
 	start := time.Now()
-	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerPullArgs)
+	err = b.commandRunner.RunCommand(ctx, logger, "", dockerCommand, dockerPullArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
@@ -267,7 +283,7 @@ func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage M
 	return nil
 }
 
-func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage ManifestStage) (containerID string, start time.Time, err error) {
+func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, needsNetwork bool) (containerID string, start time.Time, err error) {
 
 	pwd, err := filepath.Abs(b.buildDirectory)
 	if err != nil {
@@ -279,6 +295,14 @@ func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage 
 		"run",
 		"--rm",
 		"--detach",
+	}
+
+	if needsNetwork {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--network=%v", b.networkName))
+	}
+
+	if stage.Detach {
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--name=%v", stage.Name))
 	}
 
 	if stage.MountWorkingDirectory != nil && *stage.MountWorkingDirectory {
@@ -333,16 +357,12 @@ func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage 
 		}...)
 	}
 
-	if b.verbose {
-		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerRunArgs, " "))
-	}
-
 	if stage.Detach {
 		logger.Printf(aurora.Gray(12, "Starting detached stage").String())
 	}
 
 	start = time.Now()
-	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, "", dockerCommand, dockerRunArgs)
+	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerRunArgs)
 	elapsed := time.Since(start)
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
@@ -369,13 +389,10 @@ func (b *builder) containerLogs(ctx context.Context, logger *log.Logger, stage M
 		"--follow",
 		containerID,
 	}
-	if b.verbose {
-		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerLogsArgs, " "))
-	}
 
 	logger.Printf(aurora.Gray(12, "Executing commands").String())
 
-	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerLogsArgs)
+	err = b.commandRunner.RunCommand(ctx, logger, "", dockerCommand, dockerLogsArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
@@ -399,11 +416,52 @@ func (b *builder) containerStop(ctx context.Context, logger *log.Logger, stage M
 		"--time=30",
 		containerID,
 	}
-	if b.verbose {
-		logger.Printf(aurora.Gray(12, "> %v %v").String(), dockerCommand, strings.Join(dockerStopArgs, " "))
+
+	return b.commandRunner.RunCommand(context.Background(), logger, "", dockerCommand, dockerStopArgs)
+}
+
+func (b *builder) networkCreate(ctx context.Context) (err error) {
+	dockerCommand := "docker"
+	dockerNetworkCreateArgs := []string{
+		"network",
+		"create",
+		b.networkName,
 	}
 
-	return b.commandRunner.RunCommandWithLogger(context.Background(), logger, "", dockerCommand, dockerStopArgs)
+	log.Printf(aurora.Gray(12, "Creating network %v").String(), aurora.BrightBlue(b.networkName))
+
+	start := time.Now()
+	_, err = b.commandRunner.RunCommandWithOutput(ctx, nil, "", dockerCommand, dockerNetworkCreateArgs)
+	elapsed := time.Since(start)
+	if err != nil {
+		log.Printf(aurora.Gray(12, "Failed in %v\n").String(), aurora.BrightRed(elapsed.String()))
+		return err
+	}
+	log.Printf(aurora.Gray(12, "Completed in %v\n").String(), aurora.BrightGreen(elapsed.String()))
+
+	return nil
+}
+
+func (b *builder) networkRemove(ctx context.Context) (err error) {
+	dockerCommand := "docker"
+	dockerNetworkRemoveArgs := []string{
+		"network",
+		"rm",
+		b.networkName,
+	}
+
+	log.Printf(aurora.Gray(12, "Removing network %v").String(), aurora.BrightBlue(b.networkName))
+
+	start := time.Now()
+	_, err = b.commandRunner.RunCommandWithOutput(context.Background(), nil, "", dockerCommand, dockerNetworkRemoveArgs)
+	elapsed := time.Since(start)
+	if err != nil {
+		log.Printf(aurora.Gray(12, "Failed in %v\n").String(), aurora.BrightRed(elapsed.String()))
+		return err
+	}
+	log.Printf(aurora.Gray(12, "Completed in %v\n").String(), aurora.BrightGreen(elapsed.String()))
+
+	return nil
 }
 
 func (b *builder) addRunningContainer(stage ManifestStage, containerID string) {
@@ -429,7 +487,7 @@ func (b *builder) metalRun(ctx context.Context, logger *log.Logger, stage Manife
 		logger.Printf(aurora.Gray(12, "> %v").String(), c)
 
 		splitCommands := strings.Split(c, " ")
-		err = b.commandRunner.RunCommandWithLogger(ctx, logger, b.buildDirectory, splitCommands[0], splitCommands[1:])
+		err = b.commandRunner.RunCommand(ctx, logger, b.buildDirectory, splitCommands[0], splitCommands[1:])
 		if err != nil {
 			break
 		}
@@ -444,4 +502,17 @@ func (b *builder) metalRun(ctx context.Context, logger *log.Logger, stage Manife
 	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
 
 	return nil
+}
+
+func (b *builder) needsNetwork(stages []*ManifestStage) bool {
+	for _, s := range stages {
+		if s.Detach {
+			return true
+		}
+		if b.needsNetwork(s.Stages) {
+			return true
+		}
+	}
+
+	return false
 }

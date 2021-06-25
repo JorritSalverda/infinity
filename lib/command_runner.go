@@ -7,22 +7,36 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/logrusorgru/aurora"
 )
 
 //go:generate mockgen -package=lib -destination ./command_runner_mock.go -source=command_runner.go
 type CommandRunner interface {
-	RunCommandWithLogger(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error)
-	RunCommandWithOutput(ctx context.Context, dir, command string, args []string) (output []byte, err error)
+	RunCommand(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error)
+	RunCommandWithOutput(ctx context.Context, logger *log.Logger, dir, command string, args []string) (output []byte, err error)
 }
 
 type commandRunner struct {
+	verbose bool
 }
 
-func NewCommandRunner() CommandRunner {
-	return &commandRunner{}
+func NewCommandRunner(verbose bool) CommandRunner {
+	return &commandRunner{
+		verbose: verbose,
+	}
 }
 
-func (c *commandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error) {
+func (c *commandRunner) RunCommand(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error) {
+	if c.verbose {
+		if logger != nil {
+			logger.Printf(aurora.Gray(12, "> %v %v").String(), command, strings.Join(args, " "))
+		} else {
+			log.Printf(aurora.Gray(12, "> %v %v").String(), command, strings.Join(args, " "))
+		}
+	}
+
 	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Env = os.Environ()
 	cmd.Dir = dir
@@ -45,7 +59,11 @@ func (c *commandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Lo
 	multi := io.MultiReader(stdout, stderr)
 	scanner := bufio.NewScanner(multi)
 	for scanner.Scan() {
-		logger.Printf(scanner.Text())
+		if logger != nil {
+			logger.Printf(scanner.Text())
+		} else {
+			log.Print(scanner.Text())
+		}
 	}
 
 	// wait until the container is done
@@ -56,7 +74,15 @@ func (c *commandRunner) RunCommandWithLogger(ctx context.Context, logger *log.Lo
 	return nil
 }
 
-func (c *commandRunner) RunCommandWithOutput(ctx context.Context, dir, command string, args []string) (output []byte, err error) {
+func (c *commandRunner) RunCommandWithOutput(ctx context.Context, logger *log.Logger, dir, command string, args []string) (output []byte, err error) {
+	if c.verbose {
+		if logger != nil {
+			logger.Printf(aurora.Gray(12, "> %v %v").String(), command, strings.Join(args, " "))
+		} else {
+			log.Printf(aurora.Gray(12, "> %v %v").String(), command, strings.Join(args, " "))
+		}
+	}
+
 	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Env = os.Environ()
 	cmd.Dir = dir
