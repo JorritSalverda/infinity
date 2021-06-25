@@ -117,8 +117,12 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 	return nil
 }
 
-func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error) {
-	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
+func (b *builder) runStage(ctx context.Context, stage ManifestStage, prefixes ...string) (err error) {
+
+	prefixes = append(prefixes, stage.Name)
+	prefix := strings.Join(prefixes, "] [")
+
+	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", prefix)).String(), 0)
 
 	if len(stage.Stages) > 0 {
 		return b.runParallelStages(ctx, stage)
@@ -134,7 +138,8 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 
 		// docker run <image> <commands>
 		var containerID string
-		containerID, err = b.containerStart(ctx, logger, stage)
+		var start time.Time
+		containerID, start, err = b.containerStart(ctx, logger, stage)
 		if err != nil {
 			return
 		}
@@ -144,7 +149,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage) (err error)
 			return nil
 		}
 
-		return b.containerLogs(ctx, logger, stage, containerID)
+		return b.containerLogs(ctx, logger, stage, containerID, start)
 
 	case RunnerTypeMetal:
 		return b.metalRun(ctx, logger, stage)
@@ -161,7 +166,7 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (e
 		semaphore.Acquire()
 		go func(ctx context.Context, s ManifestStage) {
 			defer semaphore.Release()
-			errorChannel <- b.runStage(ctx, s)
+			errorChannel <- b.runStage(ctx, s, stage.Name)
 		}(ctx, *s)
 	}
 
@@ -180,7 +185,7 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage) (e
 func (b *builder) stopRunningContainers(ctx context.Context) (err error) {
 
 	if len(b.runningContainers) > 0 {
-		log.Printf("Terminating %v running stage containers\n\n", len(b.runningContainers))
+		log.Printf("Stopping %v running stage containers\n\n", len(b.runningContainers))
 
 		semaphore := NewSemaphore(len(b.runningContainers))
 		errorChannel := make(chan error, len(b.runningContainers))
@@ -197,7 +202,7 @@ func (b *builder) stopRunningContainers(ctx context.Context) (err error) {
 					stopErrorChannel <- b.containerStop(ctx, logger, stage, containerID)
 				}()
 
-				err = b.containerLogs(ctx, logger, stage, containerID)
+				err = b.containerLogs(ctx, logger, stage, containerID, time.Now())
 				if err != nil {
 					errorChannel <- err
 				}
@@ -262,7 +267,7 @@ func (b *builder) containerPull(ctx context.Context, logger *log.Logger, stage M
 	return nil
 }
 
-func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage ManifestStage) (containerID string, err error) {
+func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage ManifestStage) (containerID string, start time.Time, err error) {
 
 	pwd, err := filepath.Abs(b.buildDirectory)
 	if err != nil {
@@ -336,7 +341,7 @@ func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage 
 		logger.Printf(aurora.Gray(12, "Starting detached stage").String())
 	}
 
-	start := time.Now()
+	start = time.Now()
 	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, "", dockerCommand, dockerRunArgs)
 	elapsed := time.Since(start)
 	if err != nil {
@@ -355,7 +360,7 @@ func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage 
 	return
 }
 
-func (b *builder) containerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
+func (b *builder) containerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) (err error) {
 
 	// tail logs
 	dockerCommand := "docker"
@@ -370,7 +375,6 @@ func (b *builder) containerLogs(ctx context.Context, logger *log.Logger, stage M
 
 	logger.Printf(aurora.Gray(12, "Executing commands").String())
 
-	start := time.Now()
 	err = b.commandRunner.RunCommandWithLogger(ctx, logger, "", dockerCommand, dockerLogsArgs)
 	elapsed := time.Since(start)
 

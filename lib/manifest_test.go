@@ -103,7 +103,7 @@ func TestValidateForManifest(t *testing.T) {
 		_, errors := manifest.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "stage has no name; please set 'name: <name>'", errors[0].Error())
+		assert.Equal(t, "[?] stage has no name; please set 'name: <name>'", errors[0].Error())
 	})
 }
 
@@ -197,7 +197,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		_, errors := stage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "stage has no name; please set 'name: <name>'", errors[0].Error())
+		assert.Equal(t, "[?] stage has no name; please set 'name: <name>'", errors[0].Error())
 	})
 
 	t.Run("ReturnsErrorIfWorkingDirectoryIsEmpty", func(t *testing.T) {
@@ -208,7 +208,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		_, errors := stage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "stage has no working directory; please set 'work: <working directory>'", errors[0].Error())
+		assert.Equal(t, "[stage-1] work has no value; please set 'work: <working directory>'", errors[0].Error())
 	})
 
 	t.Run("ReturnsErrorIfRunnerTypeIsUnknown", func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		_, errors := stage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "unknown runner; please set 'runner: container|metal'", errors[0].Error())
+		assert.Equal(t, "[stage-1] unknown runner; please set 'runner: container|metal'", errors[0].Error())
 	})
 
 	t.Run("ReturnsNoErrorIfRunnerTypeIsUnknownAndStageHasNestedStages", func(t *testing.T) {
@@ -244,7 +244,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		_, errors := stage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "stage has no image; please set 'image: <image>'", errors[0].Error())
+		assert.Equal(t, "[stage-1] stage has no image; please set 'image: <image>'", errors[0].Error())
 	})
 
 	t.Run("ReturnsNoErrorIfImageIsEmptyAndStageHasNestedStages", func(t *testing.T) {
@@ -270,7 +270,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		_, errors := stage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'", errors[0].Error())
+		assert.Equal(t, "[stage-1] stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'", errors[0].Error())
 	})
 
 	t.Run("ReturnsWarningIfNoCommandsAreSet", func(t *testing.T) {
@@ -281,7 +281,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		warnings, _ := stage.Validate()
 
 		assert.Equal(t, 1, len(warnings))
-		assert.Equal(t, "stage has no commands; you might want to define at least one command through 'commands'", warnings[0])
+		assert.Equal(t, "[stage-1] stage has no commands; you might want to define at least one command through 'commands'", warnings[0])
 	})
 
 	t.Run("CallsValidateOnNestedStages", func(t *testing.T) {
@@ -300,7 +300,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		_, errors := outerStage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "stage has no name; please set 'name: <name>'", errors[0].Error())
+		assert.Equal(t, "[outer-stage-1] [?] stage has no name; please set 'name: <name>'", errors[0].Error())
 	})
 }
 

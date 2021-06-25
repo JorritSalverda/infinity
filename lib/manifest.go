@@ -93,38 +93,48 @@ func (s *ManifestStage) SetDefault() {
 	}
 }
 
-func (s *ManifestStage) Validate() (warnings []string, errors []error) {
+func (s *ManifestStage) Validate(prefixes ...string) (warnings []string, errors []error) {
+
+	if s.Name != "" {
+		prefixes = append(prefixes, s.Name)
+	} else {
+		prefixes = append(prefixes, "?")
+	}
+
+	prefix := strings.Join(prefixes, "] [")
+
 	if s.Name == "" {
-		errors = append(errors, fmt.Errorf("stage has no name; please set 'name: <name>'"))
+		errors = append(errors, fmt.Errorf("[%v] stage has no name; please set 'name: <name>'", prefix))
 	}
 	if len(s.Stages) == 0 {
 		if s.MountWorkingDirectory == nil {
-			errors = append(errors, fmt.Errorf("mountWork has no value; please set 'mountWork: true|false'"))
+			errors = append(errors, fmt.Errorf("[%v] mount has no value; please set 'mountWork: true|false'", prefix))
 		}
 		if s.WorkingDirectory == "" {
-			errors = append(errors, fmt.Errorf("stage has no working directory; please set 'work: <working directory>'"))
+			errors = append(errors, fmt.Errorf("[%v] work has no value; please set 'work: <working directory>'", prefix))
 		}
 		if s.RunnerType == RunnerTypeUnknown {
-			errors = append(errors, fmt.Errorf("unknown runner; please set 'runner: %v'", strings.Join(SupportedRunnerTypes.ToStringArray(), "|")))
+			errors = append(errors, fmt.Errorf("[%v] unknown runner; please set 'runner: %v'", prefix, strings.Join(SupportedRunnerTypes.ToStringArray(), "|")))
 		}
 		if len(s.Commands) == 0 && !s.Detach {
-			warnings = append(warnings, "stage has no commands; you might want to define at least one command through 'commands'")
+			warnings = append(warnings, fmt.Sprintf("[%v] stage has no commands; you might want to define at least one command through 'commands'", prefix))
 		}
 
 		switch s.RunnerType {
 		case RunnerTypeContainer:
 			if s.Image == "" {
-				errors = append(errors, fmt.Errorf("stage has no image; please set 'image: <image>'"))
+				errors = append(errors, fmt.Errorf("[%v] stage has no image; please set 'image: <image>'", prefix))
 			}
 		case RunnerTypeMetal:
 			if s.Image != "" {
-				errors = append(errors, fmt.Errorf("stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'"))
+				errors = append(errors, fmt.Errorf("[%v] stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'", prefix))
 			}
 		}
 	}
 
 	for _, st := range s.Stages {
-		w, e := st.Validate()
+
+		w, e := st.Validate(prefixes...)
 		warnings = append(warnings, w...)
 		errors = append(errors, e...)
 	}
