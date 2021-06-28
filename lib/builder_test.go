@@ -10,10 +10,12 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("SucceedsIfInfinityManifestIsValid", func(t *testing.T) {
-		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewMetalRunner(NewCommandRunner(false), ""), "", ".infinity-test.yaml")
+		dockerRunner, err := NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), "")
+		assert.Nil(t, err)
+		builder := NewBuilder(NewManifestReader(), dockerRunner, NewMetalRunner(NewCommandRunner(false), ""), "", ".infinity-test.yaml")
 
 		// act
-		_, err := builder.Validate(context.Background())
+		_, err = builder.Validate(context.Background())
 
 		assert.Nil(t, err)
 	})

@@ -12,8 +12,11 @@ var buildCmd = &cobra.Command{
 		manifestReader := lib.NewManifestReader()
 		commandRunner := lib.NewCommandRunner(verboseFlag)
 		randomStringGenerator := lib.NewRandomStringGenerator()
-		dockerRunner := lib.NewDockerRunner(commandRunner, randomStringGenerator, buildDirectoryFlag)
 		metalRunner := lib.NewMetalRunner(commandRunner, buildDirectoryFlag)
+		dockerRunner, err := lib.NewDockerRunner(commandRunner, randomStringGenerator, buildDirectoryFlag)
+		if err != nil {
+			return err
+		}
 
 		builder := lib.NewBuilder(manifestReader, dockerRunner, metalRunner, buildDirectoryFlag, buildManifestFilenameFlag)
 
