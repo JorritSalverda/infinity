@@ -4,11 +4,11 @@ name: infinity
 
 build:
   stages:
-  - name: clone
-    image: alpine:3.13
-    commands:
-    - apk add git
-    - git clone https://github.com/JorritSalverda/infinity.git .
+  # - name: clone
+  #   image: alpine:3.13
+  #   commands:
+  #   - apk add git
+  #   - git clone https://github.com/JorritSalverda/infinity.git .
   - name: parallel
     stages:
     - name: lint
@@ -28,9 +28,11 @@ build:
   #   commands:
   #   - go install
   - name: bake
-    image: docker:20.10.7-dind
+    image: docker:20.10.7
     privileged: true
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
     commands:
-    - ( dockerd-entrypoint.sh & )
-    - ( while true ; do if [ -S /var/run/docker.sock ] ; then break ; fi ; sleep 3 ; done )
+    # - ( dockerd-entrypoint.sh & )
+    # - ( while true ; do if [ -S /var/run/docker.sock ] ; then break ; fi ; sleep 3 ; done )
     - docker build -t jsalverda/infinity:latest .

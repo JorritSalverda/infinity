@@ -1,12 +1,14 @@
 package lib
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -168,7 +170,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwor
 			return nil
 		}
 
-		return b.containerLogs(ctx, logger, stage, containerID, start)
+		return b.containerTail(ctx, logger, stage, containerID, start)
 
 	case RunnerTypeMetal:
 		return b.metalRun(ctx, logger, stage)
@@ -221,7 +223,9 @@ func (b *builder) stopRunningContainers(ctx context.Context) (err error) {
 					stopErrorChannel <- b.containerStop(ctx, logger, stage, containerID)
 				}()
 
-				err = b.containerLogs(ctx, logger, stage, containerID, time.Now())
+				start := time.Now()
+
+				err = b.containerTail(ctx, logger, stage, containerID, start)
 				if err != nil {
 					errorChannel <- err
 				}
@@ -293,7 +297,6 @@ func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage 
 	dockerCommand := "docker"
 	dockerRunArgs := []string{
 		"run",
-		"--rm",
 		"--detach",
 	}
 
@@ -380,9 +383,17 @@ func (b *builder) containerStart(ctx context.Context, logger *log.Logger, stage 
 	return
 }
 
-func (b *builder) containerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) (err error) {
+func (b *builder) containerTail(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) (err error) {
 
-	// tail logs
+	defer b.removeRunningContainer(stage, containerID)
+	defer func() {
+		removeErr := b.containerRemove(ctx, logger, containerID)
+		if err == nil {
+			err = removeErr
+		}
+	}()
+
+	// follow logs
 	dockerCommand := "docker"
 	dockerLogsArgs := []string{
 		"logs",
@@ -394,19 +405,62 @@ func (b *builder) containerLogs(ctx context.Context, logger *log.Logger, stage M
 
 	err = b.commandRunner.RunCommand(ctx, logger, "", dockerCommand, dockerLogsArgs)
 	elapsed := time.Since(start)
-
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("stage %v failed: %w", stage.Name, err)
+	}
+
+	// get exit code from command output
+	exitCode, err := b.containerGetExitCode(ctx, logger, containerID)
+	if err != nil {
+		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
+		return fmt.Errorf("stage %v failed: %w", stage.Name, err)
+	}
+
+	if exitCode > 0 {
+		logger.Printf(aurora.Gray(12, "Failed with exit code %v in %v").String(), exitCode, aurora.BrightRed(elapsed.String()))
+		return fmt.Errorf("stage %v failed with exit code %v", stage.Name, exitCode)
 	}
 
 	if !stage.Detach {
 		logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
 	}
 
-	b.removeRunningContainer(stage, containerID)
-
 	return nil
+}
+
+func (b *builder) containerGetExitCode(ctx context.Context, logger *log.Logger, containerID string) (exitCode int, err error) {
+	// check exit code
+	dockerCommand := "docker"
+	dockerInspectArgs := []string{
+		"inspect",
+		"--format='{{.State.ExitCode}}'",
+		containerID,
+	}
+
+	var output []byte
+	output, err = b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerInspectArgs)
+	if err != nil {
+		return
+	}
+
+	output = bytes.Trim(output, "'\n")
+
+	return strconv.Atoi(string(output))
+}
+
+func (b *builder) containerRemove(ctx context.Context, logger *log.Logger, containerID string) (err error) {
+	// tail logs
+	dockerCommand := "docker"
+	dockerRemoveArgs := []string{
+		"rm",
+		"--volumes",
+		containerID,
+	}
+
+	_, err = b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerRemoveArgs)
+
+	return
 }
 
 func (b *builder) containerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
