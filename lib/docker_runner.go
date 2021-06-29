@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/logrusorgru/aurora"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:generate mockgen -package=lib -destination ./docker_runner_mock.go -source=docker_runner.go
@@ -367,14 +368,11 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 	if len(b.runningContainers) > 0 {
 		log.Printf("Stopping %v running stage containers\n\n", len(b.runningContainers))
 
-		semaphore := NewSemaphore(len(b.runningContainers))
-		errorChannel := make(chan error, len(b.runningContainers))
-
+		g, ctx := errgroup.WithContext(ctx)
 		for containerID, stage := range b.runningContainers {
-			semaphore.Acquire()
-			go func(ctx context.Context, stage ManifestStage, containerID string) {
-				defer semaphore.Release()
-
+			stage := stage
+			containerID := containerID
+			g.Go(func() error {
 				logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
 
 				defer func() {
@@ -394,37 +392,35 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 				// tail logs
 				err = b.ContainerLogs(ctx, logger, stage, containerID, start)
 				if err != nil {
-					errorChannel <- err
+					return err
 				}
 
 				// check exit code
 				exitCode, err := b.ContainerGetExitCode(ctx, logger, containerID)
 				if err != nil {
-					errorChannel <- err
+					return err
 				}
 
 				if exitCode > 0 {
-					errorChannel <- fmt.Errorf("stage %v failed with exit code %v", stage.Name, exitCode)
+					return fmt.Errorf("stage %v failed with exit code %v", stage.Name, exitCode)
 				}
 
 				// wait until stop finishes
 				err = <-stopErrorChannel
 				if err != nil {
-					errorChannel <- err
+					return err
 				}
-			}(ctx, stage, containerID)
+
+				return nil
+			})
 		}
 
-		semaphore.Wait()
+		// wait for all containers to be stopped
+		if err = g.Wait(); err != nil {
+			return err
+		}
 
 		log.Println("")
-
-		close(errorChannel)
-		for err = range errorChannel {
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

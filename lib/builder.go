@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/logrusorgru/aurora"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:generate mockgen -package=lib -destination ./builder_mock.go -source=builder.go
@@ -171,24 +172,15 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwor
 }
 
 func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage, needsNetwork bool) (err error) {
-	semaphore := NewSemaphore(len(stage.Stages))
-	errorChannel := make(chan error, len(stage.Stages))
-
+	g, ctx := errgroup.WithContext(ctx)
 	for _, s := range stage.Stages {
-		semaphore.Acquire()
-		go func(ctx context.Context, s ManifestStage) {
-			defer semaphore.Release()
-			errorChannel <- b.runStage(ctx, s, needsNetwork, stage.Name)
-		}(ctx, *s)
+		s := s
+		g.Go(func() error { return b.runStage(ctx, *s, needsNetwork, stage.Name) })
 	}
 
-	semaphore.Wait()
-
-	close(errorChannel)
-	for err = range errorChannel {
-		if err != nil {
-			return err
-		}
+	// wait for all stages to be done
+	if err = g.Wait(); err != nil {
+		return err
 	}
 
 	return nil
