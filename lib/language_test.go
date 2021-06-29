@@ -12,7 +12,7 @@ func TestSupportedLanguages(t *testing.T) {
 		// act
 		supportedLanguages := SupportedLanguages.ToStringArray()
 
-		assert.Equal(t, 7, len(supportedLanguages))
+		assert.Equal(t, 11, len(supportedLanguages))
 	})
 }
 

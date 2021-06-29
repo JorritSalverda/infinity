@@ -11,6 +11,10 @@ const (
 	LanguageCSharp    Language = "csharp"
 	LanguagePython    Language = "python"
 	LanguageNode      Language = "node"
+	LanguageRust      Language = "rust"
+	LanguageKotlin    Language = "kotlin"
+	LanguageSwift     Language = "swift"
+	LanguageScala     Language = "scala"
 )
 
 type languages []Language
@@ -30,6 +34,10 @@ var SupportedLanguages = languages{
 	LanguageCSharp,
 	LanguagePython,
 	LanguageNode,
+	LanguageRust,
+	LanguageKotlin,
+	LanguageSwift,
+	LanguageScala,
 }
 
 func (language Language) IsSupported() bool {

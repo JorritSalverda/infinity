@@ -12,7 +12,7 @@ func TestSupportedApplicationTypes(t *testing.T) {
 		// act
 		supportedApplicationTypes := SupportedApplicationTypes.ToStringArray()
 
-		assert.Equal(t, 5, len(supportedApplicationTypes))
+		assert.Equal(t, 6, len(supportedApplicationTypes))
 	})
 }
 

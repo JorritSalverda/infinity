@@ -3,12 +3,13 @@ package lib
 type ApplicationType string
 
 const (
-	ApplicationTypeUnknown  ApplicationType = ""
-	ApplicationTypeLibrary  ApplicationType = "library"
-	ApplicationTypeCLI      ApplicationType = "cli"
-	ApplicationTypeFirmware ApplicationType = "firmware"
-	ApplicationTypeAPI      ApplicationType = "api"
-	ApplicationTypeWeb      ApplicationType = "web"
+	ApplicationTypeUnknown    ApplicationType = ""
+	ApplicationTypeLibrary    ApplicationType = "library"
+	ApplicationTypeCLI        ApplicationType = "cli"
+	ApplicationTypeFirmware   ApplicationType = "firmware"
+	ApplicationTypeAPI        ApplicationType = "api"
+	ApplicationTypeWeb        ApplicationType = "web"
+	ApplicationTypeController ApplicationType = "controller"
 )
 
 type applicationTypes []ApplicationType
@@ -26,6 +27,7 @@ var SupportedApplicationTypes = applicationTypes{
 	ApplicationTypeFirmware,
 	ApplicationTypeAPI,
 	ApplicationTypeWeb,
+	ApplicationTypeController,
 }
 
 func (applicationType ApplicationType) IsSupported() bool {
