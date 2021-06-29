@@ -17,6 +17,7 @@ import (
 
 //go:generate mockgen -package=lib -destination ./docker_runner_mock.go -source=docker_runner.go
 type DockerRunner interface {
+	ContainerImageIsPulled(ctx context.Context, logger *log.Logger, stage ManifestStage) (isPulled bool, err error)
 	ContainerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error)
 	ContainerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, needsNetwork bool) (err error)
 	ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) (err error)
@@ -52,6 +53,37 @@ func NewDockerRunner(commandRunner CommandRunner, randomStringGenerator RandomSt
 		runningContainersMutex: NewMapMutex(),
 		networkName:            networkName,
 	}
+}
+
+func (b *dockerRunner) ContainerImageIsPulled(ctx context.Context, logger *log.Logger, stage ManifestStage) (isPulled bool, err error) {
+
+	b.pulledImagesMutex.Lock(stage.Image)
+	defer b.pulledImagesMutex.Unlock(stage.Image)
+
+	if _, ok := b.pulledImages[stage.Image]; ok {
+		logger.Printf(aurora.Gray(12, "Already pulled image %v").String(), aurora.BrightBlue(stage.Image))
+		return true, nil
+	}
+
+	dockerCommand := "docker"
+	dockerPullArgs := []string{
+		"images",
+		"--format='{{.Repository}}:{{.Tag}}'",
+		stage.Image,
+	}
+
+	output, err := b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerPullArgs)
+	if err != nil {
+		return false, err
+	}
+
+	output = bytes.Trim(output, "'\n")
+
+	if string(output) == stage.Image {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (b *dockerRunner) ContainerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {

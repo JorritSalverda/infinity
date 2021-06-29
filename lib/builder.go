@@ -22,16 +22,18 @@ type builder struct {
 	manifestReader        ManifestReader
 	dockerRunner          DockerRunner
 	metalRunner           MetalRunner
+	forcePull             bool
 	buildDirectory        string
 	buildManifestFilename string
 }
 
-func NewBuilder(manifestReader ManifestReader, dockerRunner DockerRunner, metalRunner MetalRunner, buildDirectory, buildManifestFilename string) Builder {
+func NewBuilder(manifestReader ManifestReader, dockerRunner DockerRunner, metalRunner MetalRunner, forcePull bool, buildDirectory, buildManifestFilename string) Builder {
 
 	return &builder{
 		manifestReader:        manifestReader,
 		dockerRunner:          dockerRunner,
 		metalRunner:           metalRunner,
+		forcePull:             forcePull,
 		buildDirectory:        buildDirectory,
 		buildManifestFilename: buildManifestFilename,
 	}
@@ -138,13 +140,22 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwor
 
 	switch stage.RunnerType {
 	case RunnerTypeContainer:
-		// docker pull <image>
-		err = b.dockerRunner.ContainerPull(ctx, logger, stage)
-		if err != nil {
-			return
+
+		var isPulled bool
+		if !b.forcePull {
+			isPulled, err = b.dockerRunner.ContainerImageIsPulled(ctx, logger, stage)
+			if err != nil {
+				return
+			}
 		}
 
-		// docker run <image> <commands>
+		if !isPulled {
+			err = b.dockerRunner.ContainerPull(ctx, logger, stage)
+			if err != nil {
+				return
+			}
+		}
+
 		err = b.dockerRunner.ContainerStart(ctx, logger, stage, needsNetwork)
 		if err != nil {
 			return

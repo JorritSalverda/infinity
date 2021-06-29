@@ -51,6 +51,21 @@ func (mr *MockDockerRunnerMockRecorder) ContainerGetExitCode(ctx, logger, contai
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerGetExitCode", reflect.TypeOf((*MockDockerRunner)(nil).ContainerGetExitCode), ctx, logger, containerID)
 }
 
+// ContainerImageIsPulled mocks base method.
+func (m *MockDockerRunner) ContainerImageIsPulled(ctx context.Context, logger *log.Logger, stage ManifestStage) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ContainerImageIsPulled", ctx, logger, stage)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ContainerImageIsPulled indicates an expected call of ContainerImageIsPulled.
+func (mr *MockDockerRunnerMockRecorder) ContainerImageIsPulled(ctx, logger, stage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerImageIsPulled", reflect.TypeOf((*MockDockerRunner)(nil).ContainerImageIsPulled), ctx, logger, stage)
+}
+
 // ContainerLogs mocks base method.
 func (m *MockDockerRunner) ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) error {
 	m.ctrl.T.Helper()

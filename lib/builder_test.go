@@ -10,7 +10,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("SucceedsIfInfinityManifestIsValid", func(t *testing.T) {
-		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewMetalRunner(NewCommandRunner(false), ""), "", ".infinity-test.yaml")
+		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewMetalRunner(NewCommandRunner(false), ""), false, "", ".infinity-test.yaml")
 
 		// act
 		_, err := builder.Validate(context.Background())
@@ -51,10 +51,11 @@ func TestBuild(t *testing.T) {
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
+		dockerRunner.EXPECT().ContainerImageIsPulled(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).Times(2)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -93,10 +94,11 @@ func TestBuild(t *testing.T) {
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
+		dockerRunner.EXPECT().ContainerImageIsPulled(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).AnyTimes()
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -140,10 +142,11 @@ func TestBuild(t *testing.T) {
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
+		dockerRunner.EXPECT().ContainerImageIsPulled(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).Times(2)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -187,10 +190,11 @@ func TestBuild(t *testing.T) {
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
+		dockerRunner.EXPECT().ContainerImageIsPulled(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).AnyTimes()
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -231,12 +235,13 @@ func TestBuild(t *testing.T) {
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(true).Times(1)
 		dockerRunner.EXPECT().NetworkCreate(gomock.Any()).Times(1)
+		dockerRunner.EXPECT().ContainerImageIsPulled(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(true)).AnyTimes()
 		dockerRunner.EXPECT().StopRunningContainers(gomock.Any()).Times(1)
 		dockerRunner.EXPECT().NetworkRemove(gomock.Any()).Times(1)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -272,7 +277,7 @@ func TestBuild(t *testing.T) {
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
 		metalRunner.EXPECT().MetalRun(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
