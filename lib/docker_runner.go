@@ -152,7 +152,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 			commandsArg = append(commandsArg, "set -e")
 		}
 		for _, c := range stage.Commands {
-			commandsArg = append(commandsArg, fmt.Sprintf(`printf "\033[38;5;244m> %v\033[0m\n"`, c))
+			commandsArg = append(commandsArg, fmt.Sprintf(`printf '\033[38;5;244m> %%s\033[0m\n' "%v"`, c))
 			commandsArg = append(commandsArg, c)
 		}
 		dockerRunArgs = append(dockerRunArgs, []string{
