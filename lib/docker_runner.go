@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/logrusorgru/aurora"
 )
 
@@ -33,7 +30,6 @@ type DockerRunner interface {
 }
 
 type dockerRunner struct {
-	dockerClient           *client.Client
 	commandRunner          CommandRunner
 	buildDirectory         string
 	pulledImages           map[string]struct{}
@@ -43,17 +39,11 @@ type dockerRunner struct {
 	networkName            string
 }
 
-func NewDockerRunner(commandRunner CommandRunner, randomStringGenerator RandomStringGenerator, buildDirectory string) (DockerRunner, error) {
+func NewDockerRunner(commandRunner CommandRunner, randomStringGenerator RandomStringGenerator, buildDirectory string) DockerRunner {
 
 	networkName := fmt.Sprintf("infinity-%v", randomStringGenerator.GenerateRandomString(10))
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return nil, err
-	}
-
 	return &dockerRunner{
-		dockerClient:           dockerClient,
 		commandRunner:          commandRunner,
 		buildDirectory:         buildDirectory,
 		pulledImages:           make(map[string]struct{}),
@@ -61,7 +51,7 @@ func NewDockerRunner(commandRunner CommandRunner, randomStringGenerator RandomSt
 		runningContainers:      make(map[string]ManifestStage),
 		runningContainersMutex: NewMapMutex(),
 		networkName:            networkName,
-	}, nil
+	}
 }
 
 func (b *dockerRunner) ContainerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
@@ -74,26 +64,24 @@ func (b *dockerRunner) ContainerPull(ctx context.Context, logger *log.Logger, st
 		return
 	}
 
+	dockerCommand := "docker"
+	dockerPullArgs := []string{
+		"pull",
+		stage.Image,
+	}
+
 	logger.Printf(aurora.Gray(12, "Pulling image %v").String(), aurora.BrightBlue(stage.Image))
 
 	start := time.Now()
-	rc, err := b.dockerClient.ImagePull(context.Background(), stage.Image, types.ImagePullOptions{})
+	err = b.commandRunner.RunCommand(ctx, logger, "", dockerCommand, dockerPullArgs)
 	elapsed := time.Since(start)
+
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed pulling in %v").String(), aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("pulling image %v for stage %v failed: %w", stage.Image, stage.Name, err)
 	}
-	defer rc.Close()
-
-	// wait for image pull to finish
-	_, err = ioutil.ReadAll(rc)
-	elapsed = time.Since(start)
-	if err != nil {
-		logger.Printf(aurora.Gray(12, "Failed pulling in %v").String(), aurora.BrightRed(elapsed.String()))
-		return fmt.Errorf("pulling image %v for stage %v failed: %w", stage.Image, stage.Name, err)
-	}
-
 	logger.Printf(aurora.Gray(12, "Pulled in %v").String(), aurora.BrightGreen(elapsed.String()))
+
 	b.pulledImages[stage.Image] = struct{}{}
 
 	return nil
