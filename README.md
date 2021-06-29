@@ -194,7 +194,7 @@ In order to run containers in the background, for example to be used as a servic
     env:
       COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING: "true"
     commands:
-    - exec /cockroach/cockroach start-single-node --insecure --advertise-addr cockroachdb-as-service
+    - /cockroach/cockroach start-single-node --insecure --advertise-addr cockroachdb-as-service
   - name: wait
     image: alpine:3.13
     commands:

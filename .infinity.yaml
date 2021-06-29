@@ -22,7 +22,6 @@ build:
       commands:
       - go test -short ./...
       - go build -a -installsuffix cgo -o infinity .
-      - ls -latr
   # - name: install
   #   runner: metal
   #   commands:

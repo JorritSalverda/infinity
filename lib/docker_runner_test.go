@@ -32,7 +32,7 @@ func TestContainerStart(t *testing.T) {
 		randomStringGenerator := NewMockRandomStringGenerator(ctrl)
 		randomStringGenerator.EXPECT().GenerateRandomString(10).Return("abcdefghij").Times(1)
 		commandRunner := NewMockCommandRunner(ctrl)
-		commandRunner.EXPECT().RunCommand(gomock.Any(), gomock.Any(), gomock.Eq(""), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", fmt.Sprintf("--volume=%v:/work", pwd), "--workdir=/work", "--env=INFINITY_PARAMETER_CONTAINER_NAME=mycontainer", "--env=INFINITY_PARAMETER_VULNERABILITY_THRESHOLD=CRITICAL", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf '\033[38;5;244m> %s\033[0m\n' "sleep 1" ; sleep 1`})).Times(1)
+		commandRunner.EXPECT().RunCommand(gomock.Any(), gomock.Any(), gomock.Eq(""), gomock.Eq("docker"), gomock.Eq([]string{"run", "--rm", fmt.Sprintf("--volume=%v:/work", pwd), "--workdir=/work", "--env=INFINITY_PARAMETER_CONTAINER_NAME=mycontainer", "--env=INFINITY_PARAMETER_VULNERABILITY_THRESHOLD=CRITICAL", "--entrypoint=/bin/sh", "alpine:3.13", "-c", `set -e ; printf '\033[38;5;244m> %s\033[0m\n' "exec sleep 1" ; exec sleep 1`})).Times(1)
 		logger := log.New(os.Stdout, "", 0)
 
 		runner := NewDockerRunner(commandRunner, randomStringGenerator, "")
