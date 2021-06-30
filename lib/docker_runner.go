@@ -218,7 +218,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 
 	// ensure container gets removed at the end
 	defer func() {
-		removeErr := b.ContainerRemove(context.Background(), logger, containerID)
+		removeErr := b.ContainerRemove(ctx, logger, containerID)
 		if err == nil {
 			err = removeErr
 		}
@@ -231,13 +231,13 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	go func() {
 		select {
 		case <-ctx.Done():
-			b.ContainerKill(context.Background(), logger, stage, containerID)
+			b.ContainerKill(ctx, logger, stage, containerID)
 		case <-waitDone:
 		}
 	}()
 
 	// tail logs
-	err = b.ContainerLogs(context.Background(), logger, stage, containerID, start)
+	err = b.ContainerLogs(ctx, logger, stage, containerID, start)
 	elapsed = time.Since(start)
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed tailing container in %v").String(), aurora.BrightRed(elapsed.String()))
@@ -245,7 +245,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	}
 
 	// check exit code
-	exitCode, err := b.ContainerGetExitCode(context.Background(), logger, containerID)
+	exitCode, err := b.ContainerGetExitCode(ctx, logger, containerID)
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed getting container exit code in %v").String(), aurora.BrightRed(elapsed.String()))
 		return
