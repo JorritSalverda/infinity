@@ -121,13 +121,13 @@ func TestSetDefaultForManifestStage(t *testing.T) {
 
 	t.Run("KeepsRunnerTypeIfNotUnknown", func(t *testing.T) {
 		stage := ManifestStage{
-			RunnerType: RunnerTypeMetal,
+			RunnerType: RunnerTypeHost,
 		}
 
 		// act
 		stage.SetDefault()
 
-		assert.Equal(t, RunnerTypeMetal, stage.RunnerType)
+		assert.Equal(t, RunnerTypeHost, stage.RunnerType)
 	})
 
 	t.Run("DefaultsWorkingDirectoryToWorkIfEmpty", func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestValidateForManifestStage(t *testing.T) {
 		_, errors := stage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "[stage-1] unknown runner; please set 'runner: container|metal'", errors[0].Error())
+		assert.Equal(t, "[stage-1] unknown runner; please set 'runner: container|host'", errors[0].Error())
 	})
 
 	t.Run("ReturnsNoErrorIfRunnerTypeIsUnknownAndStageHasNestedStages", func(t *testing.T) {
@@ -261,16 +261,16 @@ func TestValidateForManifestStage(t *testing.T) {
 		assert.Equal(t, 0, len(errors))
 	})
 
-	t.Run("ReturnsErrorIfImageIsSetWhenRunnerTypeIsMetal", func(t *testing.T) {
+	t.Run("ReturnsErrorIfImageIsSetWhenRunnerTypeIsHost", func(t *testing.T) {
 		stage := getValidManifestStage()
-		stage.RunnerType = RunnerTypeMetal
+		stage.RunnerType = RunnerTypeHost
 		stage.Image = "jsalverda/arduino-cli:0.18.3"
 
 		// act
 		_, errors := stage.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "[stage-1] stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'", errors[0].Error())
+		assert.Equal(t, "[stage-1] stage has image which is not supported in combination with 'runner: host'; please do not set 'image: <image>'", errors[0].Error())
 	})
 
 	t.Run("ReturnsWarningIfNoCommandsAreSet", func(t *testing.T) {

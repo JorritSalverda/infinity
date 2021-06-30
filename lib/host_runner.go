@@ -10,26 +10,26 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
-//go:generate mockgen -package=lib -destination ./metal_runner_mock.go -source=metal_runner.go
-type MetalRunner interface {
-	MetalRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error)
+//go:generate mockgen -package=lib -destination ./host_runner_mock.go -source=host_runner.go
+type HostRunner interface {
+	RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error)
 }
 
-type metalRunner struct {
+type hostRunner struct {
 	commandRunner  CommandRunner
 	buildDirectory string
 }
 
-func NewMetalRunner(commandRunner CommandRunner, buildDirectory string) MetalRunner {
+func NewHostRunner(commandRunner CommandRunner, buildDirectory string) HostRunner {
 
-	return &metalRunner{
+	return &hostRunner{
 		commandRunner:  commandRunner,
 		buildDirectory: buildDirectory,
 	}
 }
 
-func (b *metalRunner) MetalRun(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
-	logger.Printf(aurora.Gray(12, "Executing commands in bare metal mode").String())
+func (b *hostRunner) RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+	logger.Printf(aurora.Gray(12, "Executing commands on host").String())
 
 	start := time.Now()
 

@@ -132,7 +132,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 		"run",
 	}
 
-	if stage.Detach {
+	if stage.Background {
 		dockerRunArgs = append(dockerRunArgs, "--detach", fmt.Sprintf("--name=%v", stage.Name))
 	} else {
 		dockerRunArgs = append(dockerRunArgs, "--rm")
@@ -191,7 +191,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 				c = "exec " + c
 			}
 
-			commandsArg = append(commandsArg, fmt.Sprintf(`printf '\033[38;5;244m> %%s\033[0m\n' "%v"`, c))
+			commandsArg = append(commandsArg, fmt.Sprintf(`printf '\033[38;5;244m> %%s\033[0m\n' '%v'`, c))
 			commandsArg = append(commandsArg, c)
 		}
 		dockerRunArgs = append(dockerRunArgs, []string{
@@ -200,20 +200,20 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 		}...)
 	}
 
-	if stage.Detach {
+	if stage.Background {
 		if logger != nil {
-			logger.Printf(aurora.Gray(12, "Starting detached stage").String())
+			logger.Printf(aurora.Gray(12, "Starting stage in background").String())
 		}
 	}
 
-	if stage.Detach {
+	if stage.Background {
 		start := time.Now()
-		containerIDBytes, detachedErr := b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerRunArgs)
+		containerIDBytes, backgroundErr := b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerRunArgs)
 		elapsed := time.Since(start)
 
-		if detachedErr != nil {
+		if backgroundErr != nil {
 			logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
-			return detachedErr
+			return backgroundErr
 		}
 
 		containerID := strings.TrimSuffix(string(containerIDBytes), "\n")
@@ -352,7 +352,7 @@ func (b *dockerRunner) NetworkRemove(ctx context.Context) (err error) {
 
 func (b *dockerRunner) NeedsNetwork(stages []*ManifestStage) bool {
 	for _, s := range stages {
-		if s.Detach {
+		if s.Background {
 			return true
 		}
 		if b.NeedsNetwork(s.Stages) {
@@ -424,7 +424,6 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 	}
 
 	return nil
-
 }
 
 func (b *dockerRunner) addRunningContainer(stage ManifestStage, containerID string) {

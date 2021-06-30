@@ -30,8 +30,8 @@ func main() {
 			cancel()
 		case <-ctx.Done():
 		}
-		<-signalChan // second signal, hard exit
-		os.Exit(2)
+		// <-signalChan // second signal, hard exit
+		// os.Exit(2)
 	}()
 
 	if err := cmd.Execute(ctx); err != nil {

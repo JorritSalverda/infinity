@@ -14,8 +14,8 @@ build:
     - arduino-cli core list
     - arduino-cli compile -b arduino:avr:uno sketches/blink
     # - arduino-cli upload -b arduino:avr:uno -p /dev/cu.usbserial-1460 sketches/blink
-  - name: upload-on-metal
-    runner: metal
+  - name: upload-on-host
+    runner: host
     commands:
     - arduino-cli version
     - arduino-cli core install arduino:avr

@@ -62,7 +62,7 @@ type ManifestStage struct {
 	Name                  string                 `yaml:"name,omitempty" json:"name,omitempty"`
 	RunnerType            RunnerType             `yaml:"runner,omitempty" json:"runner,omitempty"`
 	Image                 string                 `yaml:"image,omitempty" json:"image,omitempty"`
-	Detach                bool                   `yaml:"detach,omitempty" json:"detach,omitempty"`
+	Background            bool                   `yaml:"background,omitempty" json:"background,omitempty"`
 	Privileged            bool                   `yaml:"privileged,omitempty" json:"privileged,omitempty"`
 	MountWorkingDirectory *bool                  `yaml:"mount,omitempty" json:"mount,omitempty"`
 	WorkingDirectory      string                 `yaml:"work,omitempty" json:"work,omitempty"`
@@ -116,7 +116,7 @@ func (s *ManifestStage) Validate(prefixes ...string) (warnings []string, errors 
 		if s.RunnerType == RunnerTypeUnknown {
 			errors = append(errors, fmt.Errorf("[%v] unknown runner; please set 'runner: %v'", prefix, strings.Join(SupportedRunnerTypes.ToStringArray(), "|")))
 		}
-		if len(s.Commands) == 0 && !s.Detach {
+		if len(s.Commands) == 0 && !s.Background {
 			warnings = append(warnings, fmt.Sprintf("[%v] stage has no commands; you might want to define at least one command through 'commands'", prefix))
 		}
 
@@ -125,9 +125,9 @@ func (s *ManifestStage) Validate(prefixes ...string) (warnings []string, errors 
 			if s.Image == "" {
 				errors = append(errors, fmt.Errorf("[%v] stage has no image; please set 'image: <image>'", prefix))
 			}
-		case RunnerTypeMetal:
+		case RunnerTypeHost:
 			if s.Image != "" {
-				errors = append(errors, fmt.Errorf("[%v] stage has image which is not supported in combination with 'runner: metal'; please do not set 'image: <image>'", prefix))
+				errors = append(errors, fmt.Errorf("[%v] stage has image which is not supported in combination with 'runner: host'; please do not set 'image: <image>'", prefix))
 			}
 		}
 	}

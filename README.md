@@ -182,14 +182,14 @@ Regular stages run sequentially, but in order to speed up things you can run sta
 
 Since these stages share the same mounted working directory do ensure they are safe to run concurrently!
 
-### Detached stages
+### Background stages
 
-In order to run containers in the background, for example to be used as a service for in-pipeline integration tests you can add `detach: true` to the stage. It will make the container start and then continue to run until all stages are done. Once they're done the _detached_ stage containers will be terminated and their logs shown.
+In order to run containers in the background, for example to be used as a service for in-pipeline integration tests you can add `background: true` to the stage. It will make the container start and then continue to run until all stages are done. Once they're done the _background_ stage containers will be terminated and their logs shown.
 
 ```yaml
   - name: cockroachdb-as-service
     image: cockroachdb/cockroach:v21.1.2
-    detach: true
+    background: true
     mount: false
     env:
       COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING: "true"
@@ -204,13 +204,13 @@ In order to run containers in the background, for example to be used as a servic
 
 Do note `mount: false` in order to prevent the working directory from getting mounted; in this particular instance the _cockroachdb_ container doesn't need access to any of the files in the working directory.
 
-### Bare metal runner
+### Host runner
 
-In the exceptional case that a command can't run inside a Docker container a stage can be run with `runner: metal`; this runs the specified commands directly on the host operating system. The drawback of using this mode is that the build time dependencies either need to be preinstalled or get installed using the commands, leaving them behind on the host.
+In the exceptional case that a command can't run inside a Docker container a stage can be run with `runner: host`; this runs the specified commands directly on the host operating system. The drawback of using this mode is that the build time dependencies either need to be preinstalled or get installed using the commands, leaving them behind on the host.
 
 ```yaml
   - name: upload
-    runner: metal
+    runner: host
     commands:
     - apt-get update && apt-get install -y curl
     - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.18.3
@@ -284,9 +284,9 @@ In the `examples` directory you can find the following examples highlighting spe
 
 | example     | shows...                                                                                                                                             |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| arduino-uno | ...how to mount devices with the default container runner and how to use the (bare) metal runner                                                     |
+| arduino-uno | ...how to mount devices with the default container runner and how to use the host runner                                                             |
 | cmake       | ...the use of an intermediate docker builder image with prepared build time dependencies for improved performance                                    |
-| db-test     | ...how to use detached stages to provide a service to other stages                                                                                   |
+| db-test     | ...how to use background stages to provide a service to other stages                                                                                 |
 | web         | ...splitting commands with same image into multiples stages for better visibility of time spent in each command; shows how a dockerfile can be built |
 
 # Local development
@@ -316,15 +316,15 @@ Then create a release with the version as tag and release title and add the zip 
 | `language`                  | language metadata                                                                                                                                                                                                            | `go\|c\|c++\|java\|csharp\|python\|node` |             |
 | `name`                      | unique name for the application                                                                                                                                                                                              | `string`                                 |             |
 | `build.stages[].name`       | name for the stage                                                                                                                                                                                                           | `string`                                 |             |
-| `build.stages[].runner`     | runner type for the stage                                                                                                                                                                                                    | `container\|metal`                       | `container` |
+| `build.stages[].runner`     | runner type for the stage                                                                                                                                                                                                    | `container\|host`                       | `container` |
 | `build.stages[].image`      | docker container image path for the image to run the stage commands in                                                                                                                                                       | `string`                                 |             |
-| `build.stages[].detach`     | run stage in detached mode, to provide a service in the background                                                                                                                                                           | `true\|false`                            | `false`     |
+| `build.stages[].background` | run stage in background, to provide a service in the background                                                                                                                                                              | `true\|false`                            | `false`     |
 | `build.stages[].privileged` | run stage in privileged mode, to allow more privileges to the host operating system                                                                                                                                          | `true\|false`                            | `false`     |
 | `build.stages[].mount`      | mount the working directory into the stage container                                                                                                                                                                         | `true\|false`                            | `true`      |
 | `build.stages[].work`       | directory to which the working copy gets mounted                                                                                                                                                                             | `string`                                 | `/work`     |
 | `build.stages[].volumes`    | array of volumes to mount, with source and target folder separated by `:`                                                                                                                                                    | `[]string`                               |             |
 | `build.stages[].devices`    | array of devices to mount, with source and target device path separated by `:`                                                                                                                                               | `[]string`                               |             |
 | `build.stages[].env`        | map of environment value keys and values to allow setting envvars in a stage                                                                                                                                                 | `map[string]string`                      |             |
-| `build.stages[].devices`    | array of commands to execute inside the stage container or on bare metal                                                                                                                                                     | `[]string`                               |             |
+| `build.stages[].commands`   | array of commands to execute inside the stage container or on host                                                                                                                                                           | `[]string`                               |             |
 | `build.stages[].stages`     | array of nested stages that are executed in parallel to speed up total build time                                                                                                                                            | `[]stage`                                |             |
 | `build.stages[].*`          | any other property set on the stage is passed as an environment variable in the form of `INFINITY_PARAMETER_<UPPER_SNAKE_CASE_VERSION_OF_PARAMETER_NAME>` to allow for more friendly configuration of a prepared stage image |                                          |             |

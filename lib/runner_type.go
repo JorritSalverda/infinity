@@ -5,7 +5,7 @@ type RunnerType string
 const (
 	RunnerTypeUnknown   RunnerType = ""
 	RunnerTypeContainer RunnerType = "container"
-	RunnerTypeMetal     RunnerType = "metal"
+	RunnerTypeHost      RunnerType = "host"
 )
 
 type runnerTypes []RunnerType
@@ -19,7 +19,7 @@ func (runnerTypes runnerTypes) ToStringArray() (result []string) {
 
 var SupportedRunnerTypes = runnerTypes{
 	RunnerTypeContainer,
-	RunnerTypeMetal,
+	RunnerTypeHost,
 }
 
 func (runnerType RunnerType) IsSupported() bool {

@@ -6,7 +6,7 @@ build:
   stages:
   - name: cockroachdb-as-service
     image: cockroachdb/cockroach:v21.1.2
-    detach: true
+    background: true
     mount: false
     env:
       COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING: "true"

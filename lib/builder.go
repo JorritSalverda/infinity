@@ -22,18 +22,18 @@ type Builder interface {
 type builder struct {
 	manifestReader        ManifestReader
 	dockerRunner          DockerRunner
-	metalRunner           MetalRunner
+	hostRunner            HostRunner
 	forcePull             bool
 	buildDirectory        string
 	buildManifestFilename string
 }
 
-func NewBuilder(manifestReader ManifestReader, dockerRunner DockerRunner, metalRunner MetalRunner, forcePull bool, buildDirectory, buildManifestFilename string) Builder {
+func NewBuilder(manifestReader ManifestReader, dockerRunner DockerRunner, hostRunner HostRunner, forcePull bool, buildDirectory, buildManifestFilename string) Builder {
 
 	return &builder{
 		manifestReader:        manifestReader,
 		dockerRunner:          dockerRunner,
-		metalRunner:           metalRunner,
+		hostRunner:            hostRunner,
 		forcePull:             forcePull,
 		buildDirectory:        buildDirectory,
 		buildManifestFilename: buildManifestFilename,
@@ -141,7 +141,6 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwor
 
 	switch stage.RunnerType {
 	case RunnerTypeContainer:
-
 		var isPulled bool
 		if !b.forcePull {
 			isPulled, err = b.dockerRunner.ContainerImageIsPulled(ctx, logger, stage)
@@ -164,8 +163,8 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwor
 
 		return nil
 
-	case RunnerTypeMetal:
-		return b.metalRunner.MetalRun(ctx, logger, stage)
+	case RunnerTypeHost:
+		return b.hostRunner.RunStage(ctx, logger, stage)
 	}
 
 	return fmt.Errorf("runner %v is not supported", stage.RunnerType)
@@ -178,10 +177,5 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage, ne
 		g.Go(func() error { return b.runStage(ctx, *s, needsNetwork, stage.Name) })
 	}
 
-	// wait for all stages to be done
-	if err = g.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return g.Wait()
 }

@@ -3,6 +3,7 @@ package lib
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/alecthomas/assert"
 	"github.com/golang/mock/gomock"
@@ -10,7 +11,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("SucceedsIfInfinityManifestIsValid", func(t *testing.T) {
-		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewMetalRunner(NewCommandRunner(false), ""), false, "", ".infinity-test.yaml")
+		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewHostRunner(NewCommandRunner(false), ""), false, "", ".infinity-test.yaml")
 
 		// act
 		_, err := builder.Validate(context.Background())
@@ -47,7 +48,7 @@ func TestBuild(t *testing.T) {
 
 		manifestReader := NewMockManifestReader(ctrl)
 		dockerRunner := NewMockDockerRunner(ctrl)
-		metalRunner := NewMockMetalRunner(ctrl)
+		hostRunner := NewMockHostRunner(ctrl)
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
@@ -55,7 +56,7 @@ func TestBuild(t *testing.T) {
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).Times(2)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, hostRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -90,7 +91,7 @@ func TestBuild(t *testing.T) {
 
 		manifestReader := NewMockManifestReader(ctrl)
 		dockerRunner := NewMockDockerRunner(ctrl)
-		metalRunner := NewMockMetalRunner(ctrl)
+		hostRunner := NewMockHostRunner(ctrl)
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
@@ -98,7 +99,7 @@ func TestBuild(t *testing.T) {
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).AnyTimes()
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, hostRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -138,7 +139,7 @@ func TestBuild(t *testing.T) {
 
 		manifestReader := NewMockManifestReader(ctrl)
 		dockerRunner := NewMockDockerRunner(ctrl)
-		metalRunner := NewMockMetalRunner(ctrl)
+		hostRunner := NewMockHostRunner(ctrl)
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
@@ -146,7 +147,7 @@ func TestBuild(t *testing.T) {
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).Times(2)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, hostRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -186,7 +187,7 @@ func TestBuild(t *testing.T) {
 
 		manifestReader := NewMockManifestReader(ctrl)
 		dockerRunner := NewMockDockerRunner(ctrl)
-		metalRunner := NewMockMetalRunner(ctrl)
+		hostRunner := NewMockHostRunner(ctrl)
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
@@ -194,7 +195,7 @@ func TestBuild(t *testing.T) {
 		dockerRunner.EXPECT().ContainerPull(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
 		dockerRunner.EXPECT().ContainerStart(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(false)).AnyTimes()
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, hostRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -213,10 +214,10 @@ func TestBuild(t *testing.T) {
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
-						Name:     "stage-1",
-						Detach:   true,
-						Image:    "alpine:3.13",
-						Commands: []string{"sleep 1"},
+						Name:       "stage-1",
+						Background: true,
+						Image:      "alpine:3.13",
+						Commands:   []string{"sleep 1"},
 					},
 					{
 						Name:     "stage-2",
@@ -230,7 +231,7 @@ func TestBuild(t *testing.T) {
 
 		manifestReader := NewMockManifestReader(ctrl)
 		dockerRunner := NewMockDockerRunner(ctrl)
-		metalRunner := NewMockMetalRunner(ctrl)
+		hostRunner := NewMockHostRunner(ctrl)
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(true).Times(1)
@@ -241,7 +242,7 @@ func TestBuild(t *testing.T) {
 		dockerRunner.EXPECT().StopRunningContainers(gomock.Any()).Times(1)
 		dockerRunner.EXPECT().NetworkRemove(gomock.Any()).Times(1)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, hostRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
@@ -249,7 +250,7 @@ func TestBuild(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("RunsMetalRunForEachStageWithMetalRunner", func(t *testing.T) {
+	t.Run("RunsHostRunForEachStageWithHostRunner", func(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 
@@ -261,7 +262,7 @@ func TestBuild(t *testing.T) {
 				Stages: []*ManifestStage{
 					{
 						Name:       "stage-1",
-						RunnerType: RunnerTypeMetal,
+						RunnerType: RunnerTypeHost,
 						Commands:   []string{"sleep 1"},
 					},
 				},
@@ -271,17 +272,109 @@ func TestBuild(t *testing.T) {
 
 		manifestReader := NewMockManifestReader(ctrl)
 		dockerRunner := NewMockDockerRunner(ctrl)
-		metalRunner := NewMockMetalRunner(ctrl)
+		hostRunner := NewMockHostRunner(ctrl)
 
 		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
 		dockerRunner.EXPECT().NeedsNetwork(gomock.Eq(manifest.Build.Stages)).Return(false).Times(1)
-		metalRunner.EXPECT().MetalRun(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+		hostRunner.EXPECT().RunStage(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
-		builder := NewBuilder(manifestReader, dockerRunner, metalRunner, false, "", ".infinity.yaml")
+		builder := NewBuilder(manifestReader, dockerRunner, hostRunner, false, "", ".infinity.yaml")
 
 		// act
 		err := builder.Build(context.Background())
 
 		assert.Nil(t, err)
+	})
+}
+
+func TestCancellation(t *testing.T) {
+	t.Run("FirstFailingParallelStageWithHostRunnerCancelsOtherStages", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("skipping test in short mode.")
+		}
+
+		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewHostRunner(NewCommandRunner(false), ""), false, "", ".infinity-test.yaml")
+
+		manifest := Manifest{
+			ApplicationType: ApplicationTypeAPI,
+			Language:        LanguageGo,
+			Name:            "test-app",
+			Build: ManifestBuild{
+				Stages: []*ManifestStage{
+					{
+						Name: "parallel",
+						Stages: []*ManifestStage{
+							{
+								Name:       "fails",
+								RunnerType: RunnerTypeHost,
+								Commands:   []string{"sleep 1", "exit 1"},
+							},
+							{
+								Name:       "gets-canceled",
+								RunnerType: RunnerTypeHost,
+								Commands:   []string{"sleep 25"},
+							},
+						},
+					},
+				},
+			},
+		}
+		manifest.SetDefault()
+		ctx := context.Background()
+
+		// act
+		start := time.Now()
+		err := builder.Build(ctx)
+		elapsed := time.Since(start)
+
+		assert.NotNil(t, err)
+		assert.Equal(t, "exit status 1", err.Error())
+		assert.True(t, elapsed.Seconds() < 2)
+	})
+
+	t.Run("FirstFailingParallelStageWithContainerRunnerCancelsOtherStages", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("skipping test in short mode.")
+		}
+
+		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewHostRunner(NewCommandRunner(false), ""), false, "", ".infinity-test.yaml")
+
+		manifest := Manifest{
+			ApplicationType: ApplicationTypeAPI,
+			Language:        LanguageGo,
+			Name:            "test-app",
+			Build: ManifestBuild{
+				Stages: []*ManifestStage{
+					{
+						Name: "parallel",
+						Stages: []*ManifestStage{
+							{
+								Name:       "fails",
+								RunnerType: RunnerTypeContainer,
+								Image:      "alpine:3.13",
+								Commands:   []string{"sleep 1", "exit 1"},
+							},
+							{
+								Name:       "gets-canceled",
+								RunnerType: RunnerTypeContainer,
+								Image:      "alpine:3.13",
+								Commands:   []string{"sleep 25"},
+							},
+						},
+					},
+				},
+			},
+		}
+		manifest.SetDefault()
+		ctx := context.Background()
+
+		// act
+		start := time.Now()
+		err := builder.Build(ctx)
+		elapsed := time.Since(start)
+
+		assert.NotNil(t, err)
+		assert.Equal(t, "exit status 1", err.Error())
+		assert.True(t, elapsed.Seconds() < 2)
 	})
 }

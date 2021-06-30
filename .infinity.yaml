@@ -23,7 +23,7 @@ build:
       - go test -short ./...
       - go build -a -installsuffix cgo -o infinity .
   # - name: install
-  #   runner: metal
+  #   runner: host
   #   commands:
   #   - go install
   - name: bake
