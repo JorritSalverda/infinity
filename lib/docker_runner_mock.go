@@ -150,6 +150,20 @@ func (mr *MockDockerRunnerMockRecorder) ContainerStop(ctx, logger, stage, contai
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerStop", reflect.TypeOf((*MockDockerRunner)(nil).ContainerStop), ctx, logger, stage, containerID)
 }
 
+// ContainerWait mocks base method.
+func (m *MockDockerRunner) ContainerWait(ctx context.Context, logger *log.Logger, containerID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ContainerWait", ctx, logger, containerID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ContainerWait indicates an expected call of ContainerWait.
+func (mr *MockDockerRunnerMockRecorder) ContainerWait(ctx, logger, containerID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerWait", reflect.TypeOf((*MockDockerRunner)(nil).ContainerWait), ctx, logger, containerID)
+}
+
 // NeedsNetwork mocks base method.
 func (m *MockDockerRunner) NeedsNetwork(stages []*ManifestStage) bool {
 	m.ctrl.T.Helper()

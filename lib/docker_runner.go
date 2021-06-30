@@ -23,6 +23,7 @@ type DockerRunner interface {
 	ContainerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, needsNetwork bool) (err error)
 	ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) (err error)
 	ContainerGetExitCode(ctx context.Context, logger *log.Logger, containerID string) (exitCode int, err error)
+	ContainerWait(ctx context.Context, logger *log.Logger, containerID string) (err error)
 	ContainerRemove(ctx context.Context, logger *log.Logger, containerID string) (err error)
 	ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
 	ContainerKill(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
@@ -200,7 +201,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	}
 
 	start := time.Now()
-	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerRunArgs)
+	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(context.Background(), logger, "", dockerCommand, dockerRunArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
@@ -218,6 +219,10 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 
 	// ensure container gets removed at the end
 	defer func() {
+		waitErr := b.ContainerWait(ctx, logger, containerID)
+		if err == nil {
+			err = waitErr
+		}
 		removeErr := b.ContainerRemove(ctx, logger, containerID)
 		if err == nil {
 			err = removeErr
@@ -301,7 +306,22 @@ func (b *dockerRunner) ContainerGetExitCode(ctx context.Context, logger *log.Log
 	return strconv.Atoi(string(output))
 }
 
+func (b *dockerRunner) ContainerWait(ctx context.Context, logger *log.Logger, containerID string) (err error) {
+
+	// tail logs
+	dockerCommand := "docker"
+	dockerWaitArgs := []string{
+		"wait",
+		containerID,
+	}
+
+	_, err = b.commandRunner.RunCommandWithOutput(context.Background(), logger, "", dockerCommand, dockerWaitArgs)
+
+	return
+}
+
 func (b *dockerRunner) ContainerRemove(ctx context.Context, logger *log.Logger, containerID string) (err error) {
+
 	// tail logs
 	dockerCommand := "docker"
 	dockerRemoveArgs := []string{
@@ -408,10 +428,15 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 		for containerID, stage := range b.runningContainers {
 			stage := stage
 			containerID := containerID
-			g.Go(func() error {
+			g.Go(func() (err error) {
 				logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
 
+				// ensure container gets removed at the end
 				defer func() {
+					waitErr := b.ContainerWait(ctx, logger, containerID)
+					if err == nil {
+						err = waitErr
+					}
 					removeErr := b.ContainerRemove(ctx, logger, containerID)
 					if err == nil {
 						err = removeErr
