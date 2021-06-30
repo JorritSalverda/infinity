@@ -14,8 +14,6 @@ build:
     - name: gets-canceled-in-container
       image: alpine:3.13
       commands:
-      - ps aux
-      - trap "echo interrupt" 1 2 15
       - exec sleep 10s
     - name: gets-canceled-on-host
       runner: host
