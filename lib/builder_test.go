@@ -293,8 +293,6 @@ func TestCancellation(t *testing.T) {
 			t.Skip("skipping test in short mode.")
 		}
 
-		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewHostRunner(NewCommandRunner(false), ""), false, "", ".infinity-test.yaml")
-
 		manifest := Manifest{
 			ApplicationType: ApplicationTypeAPI,
 			Language:        LanguageGo,
@@ -307,12 +305,12 @@ func TestCancellation(t *testing.T) {
 							{
 								Name:       "fails",
 								RunnerType: RunnerTypeHost,
-								Commands:   []string{"sleep 1", "exit 1"},
+								Commands:   []string{"sleep 1s", "exit 1"},
 							},
 							{
 								Name:       "gets-canceled",
 								RunnerType: RunnerTypeHost,
-								Commands:   []string{"sleep 25"},
+								Commands:   []string{"sleep 5s"},
 							},
 						},
 					},
@@ -322,14 +320,19 @@ func TestCancellation(t *testing.T) {
 		manifest.SetDefault()
 		ctx := context.Background()
 
+		ctrl := gomock.NewController(t)
+		manifestReader := NewMockManifestReader(ctrl)
+		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
+		builder := NewBuilder(manifestReader, NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewHostRunner(NewCommandRunner(false), ""), false, "", ".infinity.yaml")
+
 		// act
 		start := time.Now()
 		err := builder.Build(ctx)
 		elapsed := time.Since(start)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "exit status 1", err.Error())
-		assert.True(t, elapsed.Seconds() < 2)
+		assert.Equal(t, "stage fails failed: exec: \"exit\": executable file not found in $PATH", err.Error())
+		assert.True(t, elapsed.Seconds() < 3)
 	})
 
 	t.Run("FirstFailingParallelStageWithContainerRunnerCancelsOtherStages", func(t *testing.T) {
@@ -337,8 +340,6 @@ func TestCancellation(t *testing.T) {
 			t.Skip("skipping test in short mode.")
 		}
 
-		builder := NewBuilder(NewManifestReader(), NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewHostRunner(NewCommandRunner(false), ""), false, "", ".infinity-test.yaml")
-
 		manifest := Manifest{
 			ApplicationType: ApplicationTypeAPI,
 			Language:        LanguageGo,
@@ -352,13 +353,13 @@ func TestCancellation(t *testing.T) {
 								Name:       "fails",
 								RunnerType: RunnerTypeContainer,
 								Image:      "alpine:3.13",
-								Commands:   []string{"sleep 1", "exit 1"},
+								Commands:   []string{"sleep 1s", "exit 1"},
 							},
 							{
 								Name:       "gets-canceled",
 								RunnerType: RunnerTypeContainer,
 								Image:      "alpine:3.13",
-								Commands:   []string{"sleep 25"},
+								Commands:   []string{"exec sleep 5s"},
 							},
 						},
 					},
@@ -368,13 +369,18 @@ func TestCancellation(t *testing.T) {
 		manifest.SetDefault()
 		ctx := context.Background()
 
+		ctrl := gomock.NewController(t)
+		manifestReader := NewMockManifestReader(ctrl)
+		manifestReader.EXPECT().GetManifest(gomock.Any(), gomock.Eq(".infinity.yaml")).Return(manifest, nil)
+		builder := NewBuilder(manifestReader, NewDockerRunner(NewCommandRunner(false), NewRandomStringGenerator(), ""), NewHostRunner(NewCommandRunner(false), ""), false, "", ".infinity.yaml")
+
 		// act
 		start := time.Now()
 		err := builder.Build(ctx)
 		elapsed := time.Since(start)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "exit status 1", err.Error())
-		assert.True(t, elapsed.Seconds() < 2)
+		// assert.Equal(t, "exit status 1", err.Error())
+		assert.True(t, elapsed.Seconds() < 3)
 	})
 }

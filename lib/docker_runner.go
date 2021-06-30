@@ -25,6 +25,7 @@ type DockerRunner interface {
 	ContainerGetExitCode(ctx context.Context, logger *log.Logger, containerID string) (exitCode int, err error)
 	ContainerRemove(ctx context.Context, logger *log.Logger, containerID string) (err error)
 	ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
+	ContainerKill(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
 	NetworkCreate(ctx context.Context) (err error)
 	NetworkRemove(ctx context.Context) (err error)
 	NeedsNetwork(stages []*ManifestStage) bool
@@ -130,12 +131,11 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	dockerCommand := "docker"
 	dockerRunArgs := []string{
 		"run",
+		"--detach",
 	}
 
 	if stage.Background {
-		dockerRunArgs = append(dockerRunArgs, "--detach", fmt.Sprintf("--name=%v", stage.Name))
-	} else {
-		dockerRunArgs = append(dockerRunArgs, "--rm")
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--name=%v", stage.Name))
 	}
 
 	if needsNetwork {
@@ -180,17 +180,8 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	dockerRunArgs = append(dockerRunArgs, stage.Image)
 
 	if len(stage.Commands) > 0 {
-		commandsArg := []string{}
-		if len(stage.Commands) > 0 {
-			commandsArg = append(commandsArg, "set -e")
-		}
-		for i, c := range stage.Commands {
-
-			// exec last command
-			if i == len(stage.Commands)-1 {
-				c = "exec " + c
-			}
-
+		commandsArg := []string{"set -e"}
+		for _, c := range stage.Commands {
 			commandsArg = append(commandsArg, fmt.Sprintf(`printf '\033[38;5;244m> %%s\033[0m\n' '%v'`, c))
 			commandsArg = append(commandsArg, c)
 		}
@@ -204,34 +195,65 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 		if logger != nil {
 			logger.Printf(aurora.Gray(12, "Starting stage in background").String())
 		}
+	} else {
+		logger.Printf(aurora.Gray(12, "Executing commands").String())
 	}
-
-	if stage.Background {
-		start := time.Now()
-		containerIDBytes, backgroundErr := b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerRunArgs)
-		elapsed := time.Since(start)
-
-		if backgroundErr != nil {
-			logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
-			return backgroundErr
-		}
-
-		containerID := strings.TrimSuffix(string(containerIDBytes), "\n")
-		b.addRunningContainer(stage, containerID)
-		logger.Printf(aurora.Gray(12, "Started in %v").String(), aurora.BrightGreen(elapsed.String()))
-
-		return
-	}
-
-	logger.Printf(aurora.Gray(12, "Executing commands").String())
 
 	start := time.Now()
-	err = b.commandRunner.RunCommand(ctx, logger, "", dockerCommand, dockerRunArgs)
+	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(ctx, logger, "", dockerCommand, dockerRunArgs)
 	elapsed := time.Since(start)
 
 	if err != nil {
-		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
+		logger.Printf(aurora.Gray(12, "Failed starting container in %v").String(), aurora.BrightRed(elapsed.String()))
 		return
+	}
+
+	containerID := strings.TrimSuffix(string(containerIDBytes), "\n")
+	b.addRunningContainer(stage, containerID)
+
+	if stage.Background {
+		logger.Printf(aurora.Gray(12, "Started in %v").String(), aurora.BrightGreen(elapsed.String()))
+		return
+	}
+
+	// ensure container gets removed at the end
+	defer func() {
+		removeErr := b.ContainerRemove(context.Background(), logger, containerID)
+		if err == nil {
+			err = removeErr
+		}
+		b.removeRunningContainer(stage, containerID)
+	}()
+
+	// stop container on cancellation
+	waitDone := make(chan struct{})
+	defer close(waitDone)
+	go func() {
+		select {
+		case <-ctx.Done():
+			b.ContainerKill(context.Background(), logger, stage, containerID)
+		case <-waitDone:
+		}
+	}()
+
+	// tail logs
+	err = b.ContainerLogs(context.Background(), logger, stage, containerID, start)
+	elapsed = time.Since(start)
+	if err != nil {
+		logger.Printf(aurora.Gray(12, "Failed tailing container in %v").String(), aurora.BrightRed(elapsed.String()))
+		return
+	}
+
+	// check exit code
+	exitCode, err := b.ContainerGetExitCode(context.Background(), logger, containerID)
+	if err != nil {
+		logger.Printf(aurora.Gray(12, "Failed getting container exit code in %v").String(), aurora.BrightRed(elapsed.String()))
+		return
+	}
+
+	if exitCode > 0 {
+		logger.Printf(aurora.Gray(12, "Failed with exit code %v in %v").String(), exitCode, aurora.BrightRed(elapsed.String()))
+		return fmt.Errorf("stage %v failed with exit code %v", stage.Name, exitCode)
 	}
 
 	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
@@ -294,6 +316,7 @@ func (b *dockerRunner) ContainerRemove(ctx context.Context, logger *log.Logger, 
 }
 
 func (b *dockerRunner) ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
+
 	dockerCommand := "docker"
 	dockerStopArgs := []string{
 		"stop",
@@ -302,6 +325,19 @@ func (b *dockerRunner) ContainerStop(ctx context.Context, logger *log.Logger, st
 	}
 
 	_, err = b.commandRunner.RunCommandWithOutput(context.Background(), logger, "", dockerCommand, dockerStopArgs)
+
+	return
+}
+
+func (b *dockerRunner) ContainerKill(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
+
+	dockerCommand := "docker"
+	dockerKillArgs := []string{
+		"kill",
+		containerID,
+	}
+
+	_, err = b.commandRunner.RunCommandWithOutput(context.Background(), logger, "", dockerCommand, dockerKillArgs)
 
 	return
 }
@@ -380,6 +416,7 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 					if err == nil {
 						err = removeErr
 					}
+					b.removeRunningContainer(stage, containerID)
 				}()
 
 				stopErrorChannel := make(chan error)
@@ -431,4 +468,11 @@ func (b *dockerRunner) addRunningContainer(stage ManifestStage, containerID stri
 	b.runningContainersMutex.Lock(stage.Name)
 	defer b.runningContainersMutex.Unlock(stage.Name)
 	b.runningContainers[containerID] = stage
+}
+
+func (b *dockerRunner) removeRunningContainer(stage ManifestStage, containerID string) {
+	// remove container from map
+	b.runningContainersMutex.Lock(stage.Name)
+	defer b.runningContainersMutex.Unlock(stage.Name)
+	delete(b.runningContainers, containerID)
 }
