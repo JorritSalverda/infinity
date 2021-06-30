@@ -66,20 +66,6 @@ func (mr *MockDockerRunnerMockRecorder) ContainerImageIsPulled(ctx, logger, stag
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerImageIsPulled", reflect.TypeOf((*MockDockerRunner)(nil).ContainerImageIsPulled), ctx, logger, stage)
 }
 
-// ContainerKill mocks base method.
-func (m *MockDockerRunner) ContainerKill(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ContainerKill", ctx, logger, stage, containerID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ContainerKill indicates an expected call of ContainerKill.
-func (mr *MockDockerRunnerMockRecorder) ContainerKill(ctx, logger, stage, containerID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerKill", reflect.TypeOf((*MockDockerRunner)(nil).ContainerKill), ctx, logger, stage, containerID)
-}
-
 // ContainerLogs mocks base method.
 func (m *MockDockerRunner) ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) error {
 	m.ctrl.T.Helper()
@@ -137,17 +123,17 @@ func (mr *MockDockerRunnerMockRecorder) ContainerStart(ctx, logger, stage, needs
 }
 
 // ContainerStop mocks base method.
-func (m *MockDockerRunner) ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) error {
+func (m *MockDockerRunner) ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, timeoutSeconds int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ContainerStop", ctx, logger, stage, containerID)
+	ret := m.ctrl.Call(m, "ContainerStop", ctx, logger, stage, containerID, timeoutSeconds)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ContainerStop indicates an expected call of ContainerStop.
-func (mr *MockDockerRunnerMockRecorder) ContainerStop(ctx, logger, stage, containerID interface{}) *gomock.Call {
+func (mr *MockDockerRunnerMockRecorder) ContainerStop(ctx, logger, stage, containerID, timeoutSeconds interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerStop", reflect.TypeOf((*MockDockerRunner)(nil).ContainerStop), ctx, logger, stage, containerID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerStop", reflect.TypeOf((*MockDockerRunner)(nil).ContainerStop), ctx, logger, stage, containerID, timeoutSeconds)
 }
 
 // ContainerWait mocks base method.

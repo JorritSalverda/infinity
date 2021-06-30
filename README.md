@@ -298,7 +298,7 @@ You can either install `infinity` and run `infinity build`; this will compile an
 To create a new release in Github first create a zipped version of the CLI with
 
 ```
-INFINITY_VERSION=v0.1.21
+INFINITY_VERSION=v0.1.23
 
 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X 'github.com/JorritSalverda/infinity/cmd.version=${INFINITY_VERSION}'" -o infinity-${INFINITY_VERSION}-darwin-amd64
 zip infinity-${INFINITY_VERSION}-darwin-amd64.zip infinity-${INFINITY_VERSION}-darwin-amd64

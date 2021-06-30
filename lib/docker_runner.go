@@ -25,8 +25,7 @@ type DockerRunner interface {
 	ContainerGetExitCode(ctx context.Context, logger *log.Logger, containerID string) (exitCode int, err error)
 	ContainerWait(ctx context.Context, logger *log.Logger, containerID string) (err error)
 	ContainerRemove(ctx context.Context, logger *log.Logger, containerID string) (err error)
-	ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
-	ContainerKill(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
+	ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, timeoutSeconds int) (err error)
 	NetworkCreate(ctx context.Context) (err error)
 	NetworkRemove(ctx context.Context) (err error)
 	NeedsNetwork(stages []*ManifestStage) bool
@@ -236,7 +235,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	go func() {
 		select {
 		case <-ctx.Done():
-			b.ContainerKill(ctx, logger, stage, containerID)
+			_ = b.ContainerStop(ctx, logger, stage, containerID, 5)
 		case <-waitDone:
 		}
 	}()
@@ -335,29 +334,16 @@ func (b *dockerRunner) ContainerRemove(ctx context.Context, logger *log.Logger, 
 	return
 }
 
-func (b *dockerRunner) ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
+func (b *dockerRunner) ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, timeoutSeconds int) (err error) {
 
 	dockerCommand := "docker"
 	dockerStopArgs := []string{
 		"stop",
-		"--time=30",
+		fmt.Sprintf("--time=%v", timeoutSeconds),
 		containerID,
 	}
 
 	_, err = b.commandRunner.RunCommandWithOutput(context.Background(), logger, "", dockerCommand, dockerStopArgs)
-
-	return
-}
-
-func (b *dockerRunner) ContainerKill(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
-
-	dockerCommand := "docker"
-	dockerKillArgs := []string{
-		"kill",
-		containerID,
-	}
-
-	_, err = b.commandRunner.RunCommandWithOutput(context.Background(), logger, "", dockerCommand, dockerKillArgs)
 
 	return
 }
@@ -446,7 +432,7 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 
 				stopErrorChannel := make(chan error)
 				go func() {
-					stopErrorChannel <- b.ContainerStop(ctx, logger, stage, containerID)
+					stopErrorChannel <- b.ContainerStop(ctx, logger, stage, containerID, 30)
 				}()
 
 				start := time.Now()

@@ -310,7 +310,7 @@ func TestCancellation(t *testing.T) {
 							{
 								Name:       "gets-canceled",
 								RunnerType: RunnerTypeHost,
-								Commands:   []string{"sleep 5s"},
+								Commands:   []string{"sleep 25s"},
 							},
 						},
 					},
@@ -332,7 +332,7 @@ func TestCancellation(t *testing.T) {
 
 		assert.NotNil(t, err)
 		assert.Equal(t, "stage fails failed: exec: \"exit\": executable file not found in $PATH", err.Error())
-		assert.True(t, elapsed.Seconds() < 3)
+		assert.True(t, elapsed.Seconds() < 10)
 	})
 
 	t.Run("FirstFailingParallelStageWithContainerRunnerCancelsOtherStages", func(t *testing.T) {
@@ -359,7 +359,7 @@ func TestCancellation(t *testing.T) {
 								Name:       "gets-canceled",
 								RunnerType: RunnerTypeContainer,
 								Image:      "alpine:3.13",
-								Commands:   []string{"exec sleep 5s"},
+								Commands:   []string{"exec sleep 25s"},
 							},
 						},
 					},
@@ -380,7 +380,6 @@ func TestCancellation(t *testing.T) {
 		elapsed := time.Since(start)
 
 		assert.NotNil(t, err)
-		// assert.Equal(t, "exit status 1", err.Error())
-		assert.True(t, elapsed.Seconds() < 3)
+		assert.True(t, elapsed.Seconds() < 10)
 	})
 }
