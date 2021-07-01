@@ -29,7 +29,7 @@ func NewHostRunner(commandRunner CommandRunner, buildDirectory string) HostRunne
 }
 
 func (b *hostRunner) RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
-	logger.Printf(aurora.Gray(12, "Executing commands on host").String())
+	logger.Printf(aurora.Gray(12, "Starting stage on host").String())
 
 	start := time.Now()
 
@@ -45,6 +45,12 @@ func (b *hostRunner) RunStage(ctx context.Context, logger *log.Logger, stage Man
 
 	elapsed := time.Since(start)
 
+	select {
+	case <-ctx.Done():
+		logger.Printf(aurora.Gray(12, "Canceled in %v").String(), aurora.BrightCyan(elapsed.String()))
+		return nil
+	default:
+	}
 	if err != nil {
 		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("stage %v failed: %w", stage.Name, err)

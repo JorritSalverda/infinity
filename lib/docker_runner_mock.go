@@ -8,7 +8,6 @@ import (
 	context "context"
 	log "log"
 	reflect "reflect"
-	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 )
@@ -67,17 +66,17 @@ func (mr *MockDockerRunnerMockRecorder) ContainerImageIsPulled(ctx, logger, stag
 }
 
 // ContainerLogs mocks base method.
-func (m *MockDockerRunner) ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) error {
+func (m *MockDockerRunner) ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ContainerLogs", ctx, logger, stage, containerID, start)
+	ret := m.ctrl.Call(m, "ContainerLogs", ctx, logger, stage, containerID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ContainerLogs indicates an expected call of ContainerLogs.
-func (mr *MockDockerRunnerMockRecorder) ContainerLogs(ctx, logger, stage, containerID, start interface{}) *gomock.Call {
+func (mr *MockDockerRunnerMockRecorder) ContainerLogs(ctx, logger, stage, containerID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerLogs", reflect.TypeOf((*MockDockerRunner)(nil).ContainerLogs), ctx, logger, stage, containerID, start)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainerLogs", reflect.TypeOf((*MockDockerRunner)(nil).ContainerLogs), ctx, logger, stage, containerID)
 }
 
 // ContainerPull mocks base method.
@@ -165,31 +164,31 @@ func (mr *MockDockerRunnerMockRecorder) NeedsNetwork(stages interface{}) *gomock
 }
 
 // NetworkCreate mocks base method.
-func (m *MockDockerRunner) NetworkCreate(ctx context.Context) error {
+func (m *MockDockerRunner) NetworkCreate(ctx context.Context, logger *log.Logger) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkCreate", ctx)
+	ret := m.ctrl.Call(m, "NetworkCreate", ctx, logger)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NetworkCreate indicates an expected call of NetworkCreate.
-func (mr *MockDockerRunnerMockRecorder) NetworkCreate(ctx interface{}) *gomock.Call {
+func (mr *MockDockerRunnerMockRecorder) NetworkCreate(ctx, logger interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkCreate", reflect.TypeOf((*MockDockerRunner)(nil).NetworkCreate), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkCreate", reflect.TypeOf((*MockDockerRunner)(nil).NetworkCreate), ctx, logger)
 }
 
 // NetworkRemove mocks base method.
-func (m *MockDockerRunner) NetworkRemove(ctx context.Context) error {
+func (m *MockDockerRunner) NetworkRemove(ctx context.Context, logger *log.Logger) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkRemove", ctx)
+	ret := m.ctrl.Call(m, "NetworkRemove", ctx, logger)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NetworkRemove indicates an expected call of NetworkRemove.
-func (mr *MockDockerRunnerMockRecorder) NetworkRemove(ctx interface{}) *gomock.Call {
+func (mr *MockDockerRunnerMockRecorder) NetworkRemove(ctx, logger interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkRemove", reflect.TypeOf((*MockDockerRunner)(nil).NetworkRemove), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkRemove", reflect.TypeOf((*MockDockerRunner)(nil).NetworkRemove), ctx, logger)
 }
 
 // StopRunningContainers mocks base method.

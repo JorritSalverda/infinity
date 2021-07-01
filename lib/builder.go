@@ -2,6 +2,7 @@ package lib
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -78,15 +79,14 @@ func (b *builder) Build(ctx context.Context) (err error) {
 
 	log.Printf("Building manifest %v", aurora.BrightBlue(b.buildManifestFilename))
 
-	start := time.Now()
-	err = b.runManifest(ctx, manifest)
-	elapsed := time.Since(start)
-	if err != nil {
-		log.Printf("Build failed in %v\n", aurora.BrightRed(elapsed.String()))
+	if err = b.handleFunc(ctx, nil, func() error {
+		return b.runManifest(ctx, manifest)
+	}); err != nil {
+		if errors.Is(err, ErrCanceled) {
+			return nil
+		}
 		return
 	}
-
-	log.Printf("Build succeeded %v\n", aurora.BrightGreen(elapsed.String()))
 
 	return nil
 }
@@ -97,10 +97,16 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 	needsNetwork := b.dockerRunner.NeedsNetwork(manifest.Build.Stages)
 
 	if needsNetwork {
-		err = b.dockerRunner.NetworkCreate(ctx)
-		if err != nil {
+		logger := log.New(os.Stdout, aurora.Gray(12, "[infinity] ").String(), 0)
+		if err = b.handleFunc(ctx, logger, func() error {
+			return b.dockerRunner.NetworkCreate(ctx, logger)
+		}); err != nil {
+			if errors.Is(err, ErrCanceled) {
+				return nil
+			}
 			return
 		}
+		log.Println("")
 
 		defer func() {
 			terminateErr := b.dockerRunner.StopRunningContainers(ctx)
@@ -109,10 +115,14 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 			}
 
 			if needsNetwork {
-				terminateErr = b.dockerRunner.NetworkRemove(ctx)
-				if err == nil {
-					err = terminateErr
+				if terminateErr = b.handleFunc(ctx, logger, func() error {
+					return b.dockerRunner.NetworkRemove(ctx, logger)
+				}); err == nil {
+					if !errors.Is(terminateErr, ErrCanceled) {
+						err = terminateErr
+					}
 				}
+				log.Println("")
 			}
 		}()
 	}
@@ -150,14 +160,22 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwor
 		}
 
 		if !isPulled {
-			err = b.dockerRunner.ContainerPull(ctx, logger, stage)
-			if err != nil {
+			if err = b.handleFunc(ctx, logger, func() error {
+				return b.dockerRunner.ContainerPull(ctx, logger, stage)
+			}); err != nil {
+				if errors.Is(err, ErrCanceled) {
+					return nil
+				}
 				return
 			}
 		}
 
-		err = b.dockerRunner.ContainerStart(ctx, logger, stage, needsNetwork)
-		if err != nil {
+		if err = b.handleFunc(ctx, logger, func() error {
+			return b.dockerRunner.ContainerStart(ctx, logger, stage, needsNetwork)
+		}); err != nil {
+			if errors.Is(err, ErrCanceled) {
+				return nil
+			}
 			return
 		}
 
@@ -178,4 +196,43 @@ func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage, ne
 	}
 
 	return g.Wait()
+}
+
+var (
+	ErrCanceled = fmt.Errorf("This function got canceled")
+)
+
+func (b *builder) handleFunc(ctx context.Context, logger *log.Logger, funcToRun func() error) error {
+
+	start := time.Now()
+	err := funcToRun()
+	elapsed := time.Since(start)
+
+	select {
+	case <-ctx.Done():
+		if logger != nil {
+			logger.Printf(aurora.Gray(12, "Canceled in %v").String(), aurora.BrightCyan(elapsed.String()))
+		} else {
+			log.Printf(aurora.Gray(12, "Canceled in %v").String(), aurora.BrightCyan(elapsed.String()))
+		}
+		return ErrCanceled
+	default:
+	}
+
+	if err != nil {
+		if logger != nil {
+			logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
+		} else {
+			log.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
+		}
+		return err
+	}
+
+	if logger != nil {
+		logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
+	} else {
+		log.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
+	}
+
+	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/logrusorgru/aurora"
 	"golang.org/x/sync/errgroup"
@@ -21,13 +20,13 @@ type DockerRunner interface {
 	ContainerImageIsPulled(ctx context.Context, logger *log.Logger, stage ManifestStage) (isPulled bool, err error)
 	ContainerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error)
 	ContainerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, needsNetwork bool) (err error)
-	ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) (err error)
+	ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
 	ContainerGetExitCode(ctx context.Context, logger *log.Logger, containerID string) (exitCode int, err error)
 	ContainerWait(ctx context.Context, logger *log.Logger, containerID string) (err error)
 	ContainerRemove(ctx context.Context, logger *log.Logger, containerID string) (err error)
 	ContainerStop(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, timeoutSeconds int) (err error)
-	NetworkCreate(ctx context.Context) (err error)
-	NetworkRemove(ctx context.Context) (err error)
+	NetworkCreate(ctx context.Context, logger *log.Logger) (err error)
+	NetworkRemove(ctx context.Context, logger *log.Logger) (err error)
 	NeedsNetwork(stages []*ManifestStage) bool
 	StopRunningContainers(ctx context.Context) (err error)
 }
@@ -106,15 +105,10 @@ func (b *dockerRunner) ContainerPull(ctx context.Context, logger *log.Logger, st
 
 	logger.Printf(aurora.Gray(12, "Pulling image %v").String(), aurora.BrightBlue(stage.Image))
 
-	start := time.Now()
 	err = b.commandRunner.RunCommand(ctx, logger, "", dockerCommand, dockerPullArgs)
-	elapsed := time.Since(start)
-
 	if err != nil {
-		logger.Printf(aurora.Gray(12, "Failed pulling in %v").String(), aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("pulling image %v for stage %v failed: %w", stage.Image, stage.Name, err)
 	}
-	logger.Printf(aurora.Gray(12, "Pulled in %v").String(), aurora.BrightGreen(elapsed.String()))
 
 	b.pulledImages[stage.Image] = struct{}{}
 
@@ -196,15 +190,11 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 			logger.Printf(aurora.Gray(12, "Starting stage in background").String())
 		}
 	} else {
-		logger.Printf(aurora.Gray(12, "Executing commands").String())
+		logger.Printf(aurora.Gray(12, "Starting stage").String())
 	}
 
-	start := time.Now()
 	containerIDBytes, err := b.commandRunner.RunCommandWithOutput(context.Background(), logger, "", dockerCommand, dockerRunArgs)
-	elapsed := time.Since(start)
-
 	if err != nil {
-		logger.Printf(aurora.Gray(12, "Failed starting container in %v").String(), aurora.BrightRed(elapsed.String()))
 		return
 	}
 
@@ -212,7 +202,6 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	b.addRunningContainer(stage, containerID)
 
 	if stage.Background {
-		logger.Printf(aurora.Gray(12, "Started in %v").String(), aurora.BrightGreen(elapsed.String()))
 		return
 	}
 
@@ -241,31 +230,24 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	}()
 
 	// tail logs
-	err = b.ContainerLogs(ctx, logger, stage, containerID, start)
-	elapsed = time.Since(start)
+	err = b.ContainerLogs(ctx, logger, stage, containerID)
 	if err != nil {
-		logger.Printf(aurora.Gray(12, "Failed tailing container in %v").String(), aurora.BrightRed(elapsed.String()))
 		return
 	}
 
 	// check exit code
 	exitCode, err := b.ContainerGetExitCode(ctx, logger, containerID)
 	if err != nil {
-		logger.Printf(aurora.Gray(12, "Failed getting container exit code in %v").String(), aurora.BrightRed(elapsed.String()))
 		return
 	}
-
 	if exitCode > 0 {
-		logger.Printf(aurora.Gray(12, "Failed with exit code %v in %v").String(), exitCode, aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("stage %v failed with exit code %v", stage.Name, exitCode)
 	}
-
-	logger.Printf(aurora.Gray(12, "Completed in %v").String(), aurora.BrightGreen(elapsed.String()))
 
 	return
 }
 
-func (b *dockerRunner) ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string, start time.Time) (err error) {
+func (b *dockerRunner) ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error) {
 
 	// follow logs
 	dockerCommand := "docker"
@@ -276,9 +258,7 @@ func (b *dockerRunner) ContainerLogs(ctx context.Context, logger *log.Logger, st
 	}
 
 	err = b.commandRunner.RunCommand(ctx, logger, "", dockerCommand, dockerLogsArgs)
-	elapsed := time.Since(start)
 	if err != nil {
-		logger.Printf(aurora.Gray(12, "Failed in %v").String(), aurora.BrightRed(elapsed.String()))
 		return fmt.Errorf("stage %v failed: %w", stage.Name, err)
 	}
 
@@ -348,7 +328,7 @@ func (b *dockerRunner) ContainerStop(ctx context.Context, logger *log.Logger, st
 	return
 }
 
-func (b *dockerRunner) NetworkCreate(ctx context.Context) (err error) {
+func (b *dockerRunner) NetworkCreate(ctx context.Context, logger *log.Logger) (err error) {
 	dockerCommand := "docker"
 	dockerNetworkCreateArgs := []string{
 		"network",
@@ -356,21 +336,17 @@ func (b *dockerRunner) NetworkCreate(ctx context.Context) (err error) {
 		b.networkName,
 	}
 
-	log.Printf(aurora.Gray(12, "Creating network %v").String(), aurora.BrightBlue(b.networkName))
+	logger.Printf(aurora.Gray(12, "Creating network %v").String(), aurora.BrightBlue(b.networkName))
 
-	start := time.Now()
 	_, err = b.commandRunner.RunCommandWithOutput(ctx, nil, "", dockerCommand, dockerNetworkCreateArgs)
-	elapsed := time.Since(start)
 	if err != nil {
-		log.Printf(aurora.Gray(12, "Failed in %v\n").String(), aurora.BrightRed(elapsed.String()))
 		return err
 	}
-	log.Printf(aurora.Gray(12, "Completed in %v\n").String(), aurora.BrightGreen(elapsed.String()))
 
 	return nil
 }
 
-func (b *dockerRunner) NetworkRemove(ctx context.Context) (err error) {
+func (b *dockerRunner) NetworkRemove(ctx context.Context, logger *log.Logger) (err error) {
 	dockerCommand := "docker"
 	dockerNetworkRemoveArgs := []string{
 		"network",
@@ -378,16 +354,12 @@ func (b *dockerRunner) NetworkRemove(ctx context.Context) (err error) {
 		b.networkName,
 	}
 
-	log.Printf(aurora.Gray(12, "Removing network %v").String(), aurora.BrightBlue(b.networkName))
+	logger.Printf(aurora.Gray(12, "Removing network %v").String(), aurora.BrightBlue(b.networkName))
 
-	start := time.Now()
 	_, err = b.commandRunner.RunCommandWithOutput(context.Background(), nil, "", dockerCommand, dockerNetworkRemoveArgs)
-	elapsed := time.Since(start)
 	if err != nil {
-		log.Printf(aurora.Gray(12, "Failed in %v\n").String(), aurora.BrightRed(elapsed.String()))
 		return err
 	}
-	log.Printf(aurora.Gray(12, "Completed in %v\n").String(), aurora.BrightGreen(elapsed.String()))
 
 	return nil
 }
@@ -435,10 +407,8 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 					stopErrorChannel <- b.ContainerStop(ctx, logger, stage, containerID, 30)
 				}()
 
-				start := time.Now()
-
 				// tail logs
-				err = b.ContainerLogs(ctx, logger, stage, containerID, start)
+				err = b.ContainerLogs(ctx, logger, stage, containerID)
 				if err != nil {
 					return err
 				}
