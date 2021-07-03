@@ -16,10 +16,10 @@ stages:
     commands:
     - go vet ./...
     - go test -failfast -vet=off ./...
-    - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/estafette/estafette-cli/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME} .
-    # - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/estafette/estafette-cli/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-linux-amd64 .
-    # - GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/estafette/estafette-cli/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe .
-    - GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/estafette/estafette-cli/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64 .
+    - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME} .
+    # - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-linux-amd64 .
+    # - GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe .
+    - GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64 .
 
   bake:
     image: extensions/docker:stable
@@ -49,9 +49,9 @@ releases:
         commands:
         - go vet ./...
         - go test -failfast -vet=off ./...
-        # - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/estafette/estafette-cli/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-linux-amd64 .
-        # - GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/estafette/estafette-cli/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe .
-        - GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/estafette/estafette-cli/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64 .
+        # - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-linux-amd64 .
+        # - GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe .
+        - GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64 .
 
       create-github-release:
         image: extensions/github-release:stable
