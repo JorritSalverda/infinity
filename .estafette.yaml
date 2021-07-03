@@ -63,7 +63,7 @@ releases:
       clone-stable-tap:
         image: extensions/git-clone:stable
         repo: homebrew-core
-        branch: main
+        branch: master
 
       create-stable-brew-formula:
         image: extensions/brew:stable
@@ -83,4 +83,4 @@ releases:
         - git status
         - git add --all
         - git commit --allow-empty -m "infinity v${ESTAFETTE_BUILD_VERSION}"
-        - git push origin main
+        - git push origin master
