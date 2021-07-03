@@ -39,6 +39,7 @@ stages:
 
 releases:
   stable:
+    clone: true
     stages:
       build:
         image: golang:1.16-alpine
