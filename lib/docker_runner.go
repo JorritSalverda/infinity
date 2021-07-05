@@ -176,7 +176,13 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	if len(stage.Commands) > 0 {
 		commandsArg := []string{"set -e"}
 		for _, c := range stage.Commands {
-			commandsArg = append(commandsArg, fmt.Sprintf(`printf '\033[38;5;244m> %%s\033[0m\n' '%v'`, c))
+
+			// escape single quotes and backslashes when printing command
+			escapedCommand := c
+			escapedCommand = strings.Replace(escapedCommand, `\`, `\\`, -1)
+			escapedCommand = strings.Replace(escapedCommand, `'`, `\'`, -1)
+
+			commandsArg = append(commandsArg, fmt.Sprintf(`printf '\033[38;5;244m> %%s\033[0m\n' $'%v'`, escapedCommand))
 			commandsArg = append(commandsArg, c)
 		}
 		dockerRunArgs = append(dockerRunArgs, []string{
