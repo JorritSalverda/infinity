@@ -14,28 +14,28 @@ stages:
       CGO_ENABLED: 0
       GOGC: off
     commands:
-    - go vet ./...
-    - go test -failfast -vet=off ./...
-    - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME} .
+    # - go vet ./...
+    - go test -failfast ./...
+    # - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME} .
     # - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-linux-amd64 .
     # - GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe .
     - GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64 .
 
-  bake:
-    image: extensions/docker:stable
-    action: build
-    repositories:
-    - jsalverda
-    path: ./binaries
-    copy:
-    - docker-entrypoint.sh
-    - /etc/ssl/certs/ca-certificates.crt
+  # bake:
+  #   image: extensions/docker:stable
+  #   action: build
+  #   repositories:
+  #   - jsalverda
+  #   path: ./binaries
+  #   copy:
+  #   - docker-entrypoint.sh
+  #   - /etc/ssl/certs/ca-certificates.crt
 
-  push-to-docker-hub:
-    image: extensions/docker:stable
-    action: push
-    repositories:
-    - jsalverda
+  # push-to-docker-hub:
+  #   image: extensions/docker:stable
+  #   action: push
+  #   repositories:
+  #   - jsalverda
 
 releases:
   stable:
