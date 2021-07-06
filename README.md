@@ -72,7 +72,9 @@ Once an `.infinity.yaml` manifest exist in the current directory it can be valid
 infinity validate
 ```
 
-## Build/release an application locally
+## Build an application locally
+
+The manifest can container multiple _run targets_, which can be used to run local builds, builds from a CI system, releases or other _runs_ for varioius types of events.
 
 The stages of a run target in the `.infinity.yaml` manifest can be executed with:
 
@@ -91,6 +93,8 @@ or
 ```
 infinity run build/ci
 ```
+
+If you don't pass a target name it defaults to `build/local` when running it on your own machine.
 
 This will run each stage's commands inside a docker container into which the current directory gets mounted, so you can build, test and release your applications in a repeatable fashion.
 
