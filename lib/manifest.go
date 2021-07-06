@@ -6,17 +6,39 @@ import (
 )
 
 type Manifest struct {
-	ApplicationType ApplicationType `yaml:"type,omitempty" json:"type,omitempty"`
-	Language        Language        `yaml:"language,omitempty" json:"language,omitempty"`
-	Name            string          `yaml:"name,omitempty" json:"name,omitempty"`
-	Build           ManifestBuild   `yaml:"build,omitempty" json:"build,omitempty"`
+	Metadata ManifestMetadata `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+	Build    ManifestBuild    `yaml:"build,omitempty" json:"build,omitempty"`
 }
 
 func (m *Manifest) SetDefault() {
+	m.Metadata.SetDefault()
 	m.Build.SetDefault()
 }
 
 func (m *Manifest) Validate() (warnings []string, errors []error) {
+
+	w, e := m.Metadata.Validate()
+	warnings = append(warnings, w...)
+	errors = append(errors, e...)
+
+	w, e = m.Build.Validate()
+	warnings = append(warnings, w...)
+	errors = append(errors, e...)
+
+	return
+}
+
+type ManifestMetadata struct {
+	ApplicationType ApplicationType `yaml:"type,omitempty" json:"type,omitempty"`
+	Language        Language        `yaml:"language,omitempty" json:"language,omitempty"`
+	Name            string          `yaml:"name,omitempty" json:"name,omitempty"`
+}
+
+func (m *ManifestMetadata) SetDefault() {
+
+}
+
+func (m *ManifestMetadata) Validate() (warnings []string, errors []error) {
 	if !m.ApplicationType.IsSupported() {
 		errors = append(errors, fmt.Errorf("application is unknown; set to a supported application type with 'application: %v'", strings.Join(SupportedApplicationTypes.ToStringArray(), "|")))
 	}
@@ -26,10 +48,6 @@ func (m *Manifest) Validate() (warnings []string, errors []error) {
 	if m.Name == "" {
 		errors = append(errors, fmt.Errorf("application has no name; please set 'name: <name>'"))
 	}
-
-	w, e := m.Build.Validate()
-	warnings = append(warnings, w...)
-	errors = append(errors, e...)
 
 	return
 }

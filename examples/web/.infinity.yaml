@@ -1,6 +1,7 @@
-type: web
-language: node
-name: hello-web
+metadata:
+  name: hello-web
+  type: web
+  language: node
 
 build:
   stages:

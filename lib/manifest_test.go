@@ -64,7 +64,7 @@ func TestValidateForManifest(t *testing.T) {
 
 	t.Run("ReturnsErrorIfApplicationTypeIsUnknown", func(t *testing.T) {
 		manifest := getValidManifest()
-		manifest.ApplicationType = ApplicationTypeUnknown
+		manifest.Metadata.ApplicationType = ApplicationTypeUnknown
 
 		// act
 		_, errors := manifest.Validate()
@@ -75,7 +75,7 @@ func TestValidateForManifest(t *testing.T) {
 
 	t.Run("ReturnsErrorIfLanguageIsUnknown", func(t *testing.T) {
 		manifest := getValidManifest()
-		manifest.Language = LanguageUnknown
+		manifest.Metadata.Language = LanguageUnknown
 
 		// act
 		_, errors := manifest.Validate()
@@ -86,7 +86,7 @@ func TestValidateForManifest(t *testing.T) {
 
 	t.Run("ReturnsErrorIfNameIsEmpty", func(t *testing.T) {
 		manifest := getValidManifest()
-		manifest.Name = ""
+		manifest.Metadata.Name = ""
 
 		// act
 		_, errors := manifest.Validate()
@@ -308,9 +308,11 @@ func getValidManifest() Manifest {
 	stage := getValidManifestStage()
 
 	manifest := Manifest{
-		ApplicationType: ApplicationTypeAPI,
-		Language:        LanguageGo,
-		Name:            ":myapp",
+		Metadata: ManifestMetadata{
+			ApplicationType: ApplicationTypeAPI,
+			Language:        LanguageGo,
+			Name:            ":myapp",
+		},
 		Build: ManifestBuild{
 			Stages: []*ManifestStage{
 				&stage,

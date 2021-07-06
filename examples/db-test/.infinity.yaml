@@ -1,6 +1,7 @@
-type: api
-language: go
-name: api-with-db
+metadata:
+  name: api-with-db
+  type: api
+  language: go
 
 build:
   stages:

@@ -26,9 +26,11 @@ func TestBuild(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
@@ -69,9 +71,11 @@ func TestBuild(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
@@ -112,9 +116,11 @@ func TestBuild(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
@@ -160,9 +166,11 @@ func TestBuild(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
@@ -208,9 +216,11 @@ func TestBuild(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
@@ -255,9 +265,11 @@ func TestBuild(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
@@ -294,9 +306,11 @@ func TestCancellation(t *testing.T) {
 		}
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{
@@ -341,9 +355,11 @@ func TestCancellation(t *testing.T) {
 		}
 
 		manifest := Manifest{
-			ApplicationType: ApplicationTypeAPI,
-			Language:        LanguageGo,
-			Name:            "test-app",
+			Metadata: ManifestMetadata{
+				ApplicationType: ApplicationTypeAPI,
+				Language:        LanguageGo,
+				Name:            "test-app",
+			},
 			Build: ManifestBuild{
 				Stages: []*ManifestStage{
 					{

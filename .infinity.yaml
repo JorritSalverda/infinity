@@ -1,6 +1,7 @@
-type: cli
-language: go
-name: infinity
+metadata:
+  name: infinity
+  type: cli
+  language: go
 
 build:
   stages:

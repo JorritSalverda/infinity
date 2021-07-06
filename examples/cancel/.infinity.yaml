@@ -1,6 +1,7 @@
-type: cli
-language: go
-name: error-cancels-parallel-stages
+metadata:
+  name: error-cancels-parallel-stages
+  type: cli
+  language: go
 
 build:
   stages:

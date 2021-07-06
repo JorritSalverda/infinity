@@ -1,6 +1,7 @@
-type: firmware
-language: c++
-name: hello-arduino
+metadata:
+  name: hello-arduino
+  type: firmware
+  language: c++
 
 build:
   stages:

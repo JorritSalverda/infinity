@@ -1,6 +1,7 @@
-type: firmware
-language: c++
-name: hello-cmake
+metadata:
+  name: hello-cmake
+  type: firmware
+  language: c++
 
 build:
   stages:
