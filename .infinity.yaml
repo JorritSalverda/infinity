@@ -6,28 +6,44 @@ metadata:
 targets:
 - name: build/local
   stages:
-  # - name: clone
-  #   image: alpine:3.13
-  #   commands:
-  #   - apk add git
-  #   - git clone https://github.com/JorritSalverda/infinity.git .
   - name: parallel
     stages:
     - name: lint
       image: golangci/golangci-lint:latest-alpine
       commands:
       - golangci-lint run
-    - name: release
+    - name: build
       image: golang:1.16-alpine
       env:
         CGO_ENABLED: 0
       commands:
       - go test -short ./...
       - go build -a -installsuffix cgo -o infinity .
-  # - name: install
-  #   runner: host
-  #   commands:
-  #   - go install
+  - name: install
+    runner: host
+    commands:
+    - go install
+
+- name: build/ci
+  stages:
+  - name: clone
+    image: alpine:3.13
+    commands:
+    - apk add git
+    - git clone https://github.com/JorritSalverda/infinity.git .
+  - name: parallel
+    stages:
+    - name: lint
+      image: golangci/golangci-lint:latest-alpine
+      commands:
+      - golangci-lint run
+    - name: build
+      image: golang:1.16-alpine
+      env:
+        CGO_ENABLED: 0
+      commands:
+      - go test -short ./...
+      - go build -a -installsuffix cgo -o infinity .
   - name: bake
     image: docker:20.10.7
     privileged: true
