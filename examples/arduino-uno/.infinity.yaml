@@ -3,7 +3,8 @@ metadata:
   type: firmware
   language: c++
 
-build:
+targets:
+- name: build/local
   stages:
   - name: upload-in-container
     image: jsalverda/arduino-cli:0.18.3

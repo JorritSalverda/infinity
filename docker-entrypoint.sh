@@ -8,4 +8,4 @@ set -e
 while true ; do if [ -S /var/run/docker.sock ] ; then break ; fi ; sleep 1 ; done
 
 # build infinity manifest
-infinity build
+infinity run build/ci

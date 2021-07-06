@@ -14,13 +14,13 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//go:generate mockgen -package=lib -destination ./builder_mock.go -source=builder.go
-type Builder interface {
+//go:generate mockgen -package=lib -destination ./runner_mock.go -source=runner.go
+type Runner interface {
 	Validate(ctx context.Context) (manifest Manifest, err error)
-	Build(ctx context.Context) (err error)
+	Run(ctx context.Context, target string) (err error)
 }
 
-type builder struct {
+type runner struct {
 	manifestReader        ManifestReader
 	dockerRunner          DockerRunner
 	hostRunner            HostRunner
@@ -29,9 +29,9 @@ type builder struct {
 	buildManifestFilename string
 }
 
-func NewBuilder(manifestReader ManifestReader, dockerRunner DockerRunner, hostRunner HostRunner, forcePull bool, buildDirectory, buildManifestFilename string) Builder {
+func NewRunner(manifestReader ManifestReader, dockerRunner DockerRunner, hostRunner HostRunner, forcePull bool, buildDirectory, buildManifestFilename string) Runner {
 
-	return &builder{
+	return &runner{
 		manifestReader:        manifestReader,
 		dockerRunner:          dockerRunner,
 		hostRunner:            hostRunner,
@@ -41,7 +41,7 @@ func NewBuilder(manifestReader ManifestReader, dockerRunner DockerRunner, hostRu
 	}
 }
 
-func (b *builder) Validate(ctx context.Context) (manifest Manifest, err error) {
+func (b *runner) Validate(ctx context.Context) (manifest Manifest, err error) {
 	log.Printf("Validating manifest %v", aurora.BrightBlue(b.buildManifestFilename))
 
 	manifestPath := filepath.Join(b.buildDirectory, b.buildManifestFilename)
@@ -71,16 +71,16 @@ func (b *builder) Validate(ctx context.Context) (manifest Manifest, err error) {
 	return
 }
 
-func (b *builder) Build(ctx context.Context) (err error) {
+func (b *runner) Run(ctx context.Context, target string) (err error) {
 	manifest, err := b.Validate(ctx)
 	if err != nil {
 		return
 	}
 
-	log.Printf("Building manifest %v", aurora.BrightBlue(b.buildManifestFilename))
+	log.Printf("Running manifest %v target %v", aurora.BrightBlue(b.buildManifestFilename), aurora.BrightBlue(target))
 
 	if err = b.handleFunc(ctx, nil, func() error {
-		return b.runManifest(ctx, manifest)
+		return b.runManifest(ctx, manifest, target)
 	}); err != nil {
 		if errors.Is(err, ErrCanceled) {
 			return nil
@@ -91,10 +91,26 @@ func (b *builder) Build(ctx context.Context) (err error) {
 	return nil
 }
 
-func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error) {
+func (b *runner) getManifestTarget(ctx context.Context, manifest Manifest, target string) (manifestTarget *ManifestTarget, err error) {
+	for _, t := range manifest.Targets {
+		if t.Name == target {
+			return t, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Target %v is not defined in manifest", target)
+}
+
+func (b *runner) runManifest(ctx context.Context, manifest Manifest, target string) (err error) {
 	log.Println("")
 
-	needsNetwork := b.dockerRunner.NeedsNetwork(manifest.Build.Stages)
+	// get target
+	manifestTarget, err := b.getManifestTarget(ctx, manifest, target)
+	if err != nil {
+		return
+	}
+
+	needsNetwork := b.dockerRunner.NeedsNetwork(manifestTarget.Stages)
 
 	if needsNetwork {
 		logger := log.New(os.Stdout, aurora.Gray(12, "[infinity] ").String(), 0)
@@ -127,7 +143,7 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 		}()
 	}
 
-	for _, stage := range manifest.Build.Stages {
+	for _, stage := range manifestTarget.Stages {
 		err = b.runStage(ctx, *stage, needsNetwork)
 		log.Println("")
 		if err != nil {
@@ -138,7 +154,7 @@ func (b *builder) runManifest(ctx context.Context, manifest Manifest) (err error
 	return nil
 }
 
-func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwork bool, prefixes ...string) (err error) {
+func (b *runner) runStage(ctx context.Context, stage ManifestStage, needsNetwork bool, prefixes ...string) (err error) {
 
 	prefixes = append(prefixes, stage.Name)
 	prefix := strings.Join(prefixes, "] [")
@@ -188,7 +204,7 @@ func (b *builder) runStage(ctx context.Context, stage ManifestStage, needsNetwor
 	return fmt.Errorf("runner %v is not supported", stage.RunnerType)
 }
 
-func (b *builder) runParallelStages(ctx context.Context, stage ManifestStage, needsNetwork bool) (err error) {
+func (b *runner) runParallelStages(ctx context.Context, stage ManifestStage, needsNetwork bool) (err error) {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, s := range stage.Stages {
 		s := s
@@ -202,7 +218,7 @@ var (
 	ErrCanceled = fmt.Errorf("This function got canceled")
 )
 
-func (b *builder) handleFunc(ctx context.Context, logger *log.Logger, funcToRun func() error) error {
+func (b *runner) handleFunc(ctx context.Context, logger *log.Logger, funcToRun func() error) error {
 
 	start := time.Now()
 	err := funcToRun()

@@ -3,7 +3,8 @@ metadata:
   type: cli
   language: go
 
-build:
+targets:
+- name: build/local
   stages:
   - name: test
     image: golang:1.16-alpine

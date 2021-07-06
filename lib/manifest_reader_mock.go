@@ -6,35 +6,34 @@ package lib
 
 import (
 	context "context"
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
-// MockManifestReader is a mock of ManifestReader interface.
+// MockManifestReader is a mock of ManifestReader interface
 type MockManifestReader struct {
 	ctrl     *gomock.Controller
 	recorder *MockManifestReaderMockRecorder
 }
 
-// MockManifestReaderMockRecorder is the mock recorder for MockManifestReader.
+// MockManifestReaderMockRecorder is the mock recorder for MockManifestReader
 type MockManifestReaderMockRecorder struct {
 	mock *MockManifestReader
 }
 
-// NewMockManifestReader creates a new mock instance.
+// NewMockManifestReader creates a new mock instance
 func NewMockManifestReader(ctrl *gomock.Controller) *MockManifestReader {
 	mock := &MockManifestReader{ctrl: ctrl}
 	mock.recorder = &MockManifestReaderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockManifestReader) EXPECT() *MockManifestReaderMockRecorder {
 	return m.recorder
 }
 
-// GetManifest mocks base method.
+// GetManifest mocks base method
 func (m *MockManifestReader) GetManifest(ctx context.Context, buildManifestFilename string) (Manifest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetManifest", ctx, buildManifestFilename)
@@ -43,7 +42,7 @@ func (m *MockManifestReader) GetManifest(ctx context.Context, buildManifestFilen
 	return ret0, ret1
 }
 
-// GetManifest indicates an expected call of GetManifest.
+// GetManifest indicates an expected call of GetManifest
 func (mr *MockManifestReaderMockRecorder) GetManifest(ctx, buildManifestFilename interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManifest", reflect.TypeOf((*MockManifestReader)(nil).GetManifest), ctx, buildManifestFilename)

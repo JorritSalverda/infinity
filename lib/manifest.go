@@ -6,13 +6,16 @@ import (
 )
 
 type Manifest struct {
-	Metadata ManifestMetadata `yaml:"metadata,omitempty" json:"metadata,omitempty"`
-	Build    ManifestBuild    `yaml:"build,omitempty" json:"build,omitempty"`
+	Metadata ManifestMetadata  `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+	Targets  []*ManifestTarget `yaml:"targets,omitempty" json:"targets,omitempty"`
 }
 
 func (m *Manifest) SetDefault() {
 	m.Metadata.SetDefault()
-	m.Build.SetDefault()
+
+	for _, t := range m.Targets {
+		t.SetDefault()
+	}
 }
 
 func (m *Manifest) Validate() (warnings []string, errors []error) {
@@ -21,9 +24,11 @@ func (m *Manifest) Validate() (warnings []string, errors []error) {
 	warnings = append(warnings, w...)
 	errors = append(errors, e...)
 
-	w, e = m.Build.Validate()
-	warnings = append(warnings, w...)
-	errors = append(errors, e...)
+	for _, t := range m.Targets {
+		w, e := t.Validate()
+		warnings = append(warnings, w...)
+		errors = append(errors, e...)
+	}
 
 	return
 }
@@ -52,17 +57,22 @@ func (m *ManifestMetadata) Validate() (warnings []string, errors []error) {
 	return
 }
 
-type ManifestBuild struct {
+type ManifestTarget struct {
+	Name   string           `yaml:"name,omitempty" json:"name,omitempty"`
 	Stages []*ManifestStage `yaml:"stages,omitempty" json:"stages,omitempty"`
 }
 
-func (b *ManifestBuild) SetDefault() {
+func (b *ManifestTarget) SetDefault() {
 	for _, s := range b.Stages {
 		s.SetDefault()
 	}
 }
 
-func (b *ManifestBuild) Validate() (warnings []string, errors []error) {
+func (b *ManifestTarget) Validate() (warnings []string, errors []error) {
+	if b.Name == "" {
+		errors = append(errors, fmt.Errorf("target has no name; please set 'name: <name>'"))
+	}
+
 	if len(b.Stages) == 0 {
 		errors = append(errors, fmt.Errorf("manifest has no stages; define at least stage through 'build.stages'"))
 	}

@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	buildCmd = &cobra.Command{
-		Use:   "build",
-		Short: "Build your application using the .infinity.yaml manifest",
+	runCmd = &cobra.Command{
+		Use:   "run",
+		Short: "Run a target to build or release your application using the .infinity.yaml manifest",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			manifestReader := lib.NewManifestReader()
 			commandRunner := lib.NewCommandRunner(verboseFlag)
@@ -16,9 +16,15 @@ var (
 			dockerRunner := lib.NewDockerRunner(commandRunner, randomStringGenerator, buildDirectoryFlag)
 			hostRunner := lib.NewHostRunner(commandRunner, buildDirectoryFlag)
 
-			builder := lib.NewBuilder(manifestReader, dockerRunner, hostRunner, forcePullFlag, buildDirectoryFlag, buildManifestFilenameFlag)
+			runner := lib.NewRunner(manifestReader, dockerRunner, hostRunner, forcePullFlag, buildDirectoryFlag, buildManifestFilenameFlag)
 
-			return builder.Build(cmd.Context())
+			// extract arguments
+			target := "build/local"
+			if len(args) > 0 {
+				target = args[0]
+			}
+
+			return runner.Run(cmd.Context(), target)
 		},
 	}
 
@@ -26,5 +32,5 @@ var (
 )
 
 func init() {
-	buildCmd.Flags().BoolVarP(&forcePullFlag, "pull", "p", false, "Force pulling images")
+	runCmd.Flags().BoolVarP(&forcePullFlag, "pull", "p", false, "Force pulling images")
 }

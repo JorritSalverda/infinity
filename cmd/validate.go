@@ -15,9 +15,9 @@ var validateCmd = &cobra.Command{
 		dockerRunner := lib.NewDockerRunner(commandRunner, randomStringGenerator, buildDirectoryFlag)
 		hostRunner := lib.NewHostRunner(commandRunner, buildDirectoryFlag)
 
-		builder := lib.NewBuilder(manifestReader, dockerRunner, hostRunner, forcePullFlag, buildDirectoryFlag, buildManifestFilenameFlag)
+		runner := lib.NewRunner(manifestReader, dockerRunner, hostRunner, forcePullFlag, buildDirectoryFlag, buildManifestFilenameFlag)
 
-		_, err := builder.Validate(cmd.Context())
+		_, err := runner.Validate(cmd.Context())
 		return err
 	},
 }

@@ -3,7 +3,8 @@ metadata:
   type: web
   language: node
 
-build:
+targets:
+- name: build/local
   stages:
   - name: audit
     image: node:16-alpine

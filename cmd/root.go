@@ -30,6 +30,6 @@ func init() {
 
 	rootCmd.AddCommand(scaffoldCmd)
 	rootCmd.AddCommand(validateCmd)
-	rootCmd.AddCommand(buildCmd)
+	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(versionCmd)
 }

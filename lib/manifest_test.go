@@ -18,28 +18,32 @@ func TestUnmarshalManifest(t *testing.T) {
 		err = yaml.UnmarshalStrict(manifestData, &manifest)
 
 		assert.Nil(t, err)
-		assert.Equal(t, 2, len(manifest.Build.Stages))
+		assert.Equal(t, 1, len(manifest.Targets))
+		assert.Equal(t, 2, len(manifest.Targets[0].Stages))
 
-		assert.Equal(t, "test", manifest.Build.Stages[0].Name)
-		assert.Equal(t, "golang:1.16-alpine", manifest.Build.Stages[0].Image)
-		assert.Equal(t, 1, len(manifest.Build.Stages[0].Commands))
-		assert.Equal(t, "go test -short ./...", manifest.Build.Stages[0].Commands[0])
+		assert.Equal(t, "test", manifest.Targets[0].Stages[0].Name)
+		assert.Equal(t, "golang:1.16-alpine", manifest.Targets[0].Stages[0].Image)
+		assert.Equal(t, 1, len(manifest.Targets[0].Stages[0].Commands))
+		assert.Equal(t, "go test -short ./...", manifest.Targets[0].Stages[0].Commands[0])
 
-		assert.Equal(t, "build", manifest.Build.Stages[1].Name)
-		assert.Equal(t, "golang:1.16-alpine", manifest.Build.Stages[1].Image)
-		assert.Equal(t, "0", manifest.Build.Stages[1].Env["CGO_ENABLED"])
-		assert.Equal(t, 1, len(manifest.Build.Stages[1].Commands))
-		assert.Equal(t, "go build -a -installsuffix cgo .", manifest.Build.Stages[1].Commands[0])
+		assert.Equal(t, "build", manifest.Targets[0].Stages[1].Name)
+		assert.Equal(t, "golang:1.16-alpine", manifest.Targets[0].Stages[1].Image)
+		assert.Equal(t, "0", manifest.Targets[0].Stages[1].Env["CGO_ENABLED"])
+		assert.Equal(t, 1, len(manifest.Targets[0].Stages[1].Commands))
+		assert.Equal(t, "go build -a -installsuffix cgo .", manifest.Targets[0].Stages[1].Commands[0])
 	})
 }
 
 func TestSetDefaultForManifest(t *testing.T) {
 	t.Run("CallsSetDefaultOnBuildStages", func(t *testing.T) {
 		manifest := Manifest{
-			Build: ManifestBuild{
-				Stages: []*ManifestStage{
-					{
-						RunnerType: RunnerTypeUnknown,
+			Targets: []*ManifestTarget{
+				{
+					Name: "build/local",
+					Stages: []*ManifestStage{
+						{
+							RunnerType: RunnerTypeUnknown,
+						},
 					},
 				},
 			},
@@ -48,7 +52,7 @@ func TestSetDefaultForManifest(t *testing.T) {
 		// act
 		manifest.SetDefault()
 
-		assert.Equal(t, RunnerTypeContainer, manifest.Build.Stages[0].RunnerType)
+		assert.Equal(t, RunnerTypeContainer, manifest.Targets[0].Stages[0].RunnerType)
 	})
 }
 
@@ -97,7 +101,7 @@ func TestValidateForManifest(t *testing.T) {
 
 	t.Run("CallsValidateOnAllBuildStages", func(t *testing.T) {
 		manifest := getValidManifest()
-		manifest.Build.Stages[0].Name = ""
+		manifest.Targets[0].Stages[0].Name = ""
 
 		// act
 		_, errors := manifest.Validate()
@@ -313,9 +317,12 @@ func getValidManifest() Manifest {
 			Language:        LanguageGo,
 			Name:            ":myapp",
 		},
-		Build: ManifestBuild{
-			Stages: []*ManifestStage{
-				&stage,
+		Targets: []*ManifestTarget{
+			{
+				Name: "build/local",
+				Stages: []*ManifestStage{
+					&stage,
+				},
 			},
 		},
 	}

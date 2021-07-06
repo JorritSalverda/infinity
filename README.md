@@ -72,12 +72,24 @@ Once an `.infinity.yaml` manifest exist in the current directory it can be valid
 infinity validate
 ```
 
-## Build an application locally
+## Build/release an application locally
 
-The build stages in the `.infinity.yaml` manifest can be executed with:
+The stages of a run target in the `.infinity.yaml` manifest can be executed with:
 
 ```
-infinity build
+infinity run <target>
+```
+
+For example:
+
+```
+infinity run build/local
+```
+
+or
+
+```
+infinity run build/ci
 ```
 
 This will run each stage's commands inside a docker container into which the current directory gets mounted, so you can build, test and release your applications in a repeatable fashion.
@@ -87,7 +99,8 @@ Having a pipeline as code gives control over build time dependency to the author
 An `.infinity.yaml` manifest looks as follows:
 
 ```yaml
-build:
+targets:
+- name: build/local
   stages:
   - name: audit
     image: node:16-alpine
@@ -103,7 +116,7 @@ build:
     - npm ci
 ```
 
-When executed with the `infinity build` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output looks as follows:
+When executed with the `infinity run` command it executes the `npm audit` and `npm ci` commands inside a `node:16-alpine` container where the current directory gets mounted to the `/work` directory. The output looks as follows:
 
 ![Build output](https://github.com/JorritSalverda/infinity/blob/main/screenshot.jpg?raw=true)
 
@@ -291,7 +304,7 @@ In the `examples` directory you can find the following examples highlighting spe
 
 # Local development
 
-You can either install `infinity` and run `infinity build`; this will compile and install the cli in the go binary folder. Or just run `go install` instead.
+You can either install `infinity` and then run `infinity run`; this will compile and install the cli in the go binary folder. Or just run `go install` instead.
 
 # Release
 

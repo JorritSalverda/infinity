@@ -3,7 +3,8 @@ metadata:
   type: firmware
   language: c++
 
-build:
+targets:
+- name: build/local
   stages:
   - name: build
     image: jsalverda/gcc-cmake:11.1.0

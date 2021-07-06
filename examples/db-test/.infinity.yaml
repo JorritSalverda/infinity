@@ -3,7 +3,8 @@ metadata:
   type: api
   language: go
 
-build:
+targets:
+- name: build/local
   stages:
   - name: cockroachdb-as-service
     image: cockroachdb/cockroach:v21.1.2
