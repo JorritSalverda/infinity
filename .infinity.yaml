@@ -19,6 +19,10 @@ targets:
       commands:
       - go test -short ./...
       - go build -a -installsuffix cgo -o infinity .
+    - name: scan
+      image: aquasec/trivy:0.18.3
+      commands:
+      - trivy fs --exit-code 1 --ignore-unfixed .
   - name: install
     runner: host
     commands:
