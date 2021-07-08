@@ -100,6 +100,7 @@ type ManifestStage struct {
 	Commands              []string               `yaml:"commands,omitempty" json:"commands,omitempty"`
 	Stages                []*ManifestStage       `yaml:"stages,omitempty" json:"stages,omitempty"`
 	Parameters            map[string]interface{} `yaml:",inline"`
+	colorCode             uint8                  `yaml:"-" json:"-"`
 }
 
 func (s *ManifestStage) SetDefault() {

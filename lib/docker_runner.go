@@ -393,7 +393,7 @@ func (b *dockerRunner) StopRunningContainers(ctx context.Context) (err error) {
 			stage := stage
 			containerID := containerID
 			g.Go(func() (err error) {
-				logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
+				logger := log.New(os.Stdout, aurora.Index(stage.colorCode, fmt.Sprintf("[%v] ", stage.Name)).String(), 0)
 
 				// ensure container gets removed at the end
 				defer func() {

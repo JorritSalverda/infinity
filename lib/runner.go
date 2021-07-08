@@ -110,6 +110,9 @@ func (b *runner) runManifest(ctx context.Context, manifest Manifest, target stri
 		return
 	}
 
+	// set color codes for coloring stage logs
+	b.setColorCode(manifestTarget.Stages)
+
 	needsNetwork := b.dockerRunner.NeedsNetwork(manifestTarget.Stages)
 
 	if needsNetwork {
@@ -154,12 +157,26 @@ func (b *runner) runManifest(ctx context.Context, manifest Manifest, target stri
 	return nil
 }
 
+func (b *runner) getColorCode(stageIndex int) uint8 {
+
+	availableColors := []uint8{11, 12, 13, 8, 6}
+
+	return availableColors[stageIndex%len(availableColors)]
+}
+
+func (b *runner) setColorCode(stages []*ManifestStage) {
+	for i, st := range stages {
+		st.colorCode = b.getColorCode(i)
+		b.setColorCode(st.Stages)
+	}
+}
+
 func (b *runner) runStage(ctx context.Context, stage ManifestStage, needsNetwork bool, prefixes ...string) (err error) {
 
 	prefixes = append(prefixes, stage.Name)
 	prefix := strings.Join(prefixes, "] [")
 
-	logger := log.New(os.Stdout, aurora.Gray(12, fmt.Sprintf("[%v] ", prefix)).String(), 0)
+	logger := log.New(os.Stdout, aurora.Index(stage.colorCode, fmt.Sprintf("[%v] ", prefix)).String(), 0)
 
 	if len(stage.Stages) > 0 {
 		return b.runParallelStages(ctx, stage, needsNetwork)
