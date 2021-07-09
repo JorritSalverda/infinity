@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/JorritSalverda/infinity/lib"
+	"github.com/JorritSalverda/infinity/pkg/lib"
 	"github.com/spf13/cobra"
 )
 
