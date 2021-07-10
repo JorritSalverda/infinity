@@ -1,5 +1,5 @@
 local name = "infinity"
-local version = "0.2.15"
+local version = "0.2.19"
 
 food = {
     name = name,
@@ -12,7 +12,7 @@ food = {
             arch = "amd64",
             url = "https://github.com/JorritSalverda/" .. name .. "/releases/download/v" .. version .. "/" .. name .. "-v" .. version .. "-darwin-amd64.zip",
             -- shasum of the release archive
-            sha256 = "b210399a32c0189bdc1c46571cb19ef09b3843952eb9f089fa2c61c1c6a9f7ab",
+            sha256 = "9b7a2f79a7ede4f1bbfe203d69bbfb31f682ffdb0e87a802f5a20e5306919d88",
             resources = {
                 {
                     path = name .. "-v" .. version .. "-darwin-amd64",
@@ -20,33 +20,33 @@ food = {
                     executable = true
                 }
             }
-        }-- ,
-        -- {
-        --     os = "linux",
-        --     arch = "amd64",
-        --     url = "https://github.com/JorritSalverda/" .. name .. "/releases/download/v" .. version .. "/" .. name .. "-v" .. version .. "-linux-amd64.zip",
-        --     -- shasum of the release archive
-        --     sha256 = "",
-        --     resources = {
-        --         {
-        --             path = name,
-        --             installpath = "bin/" .. name,
-        --             executable = true
-        --         }
-        --     }
-        -- },
-        -- {
-        --     os = "windows",
-        --     arch = "amd64",
-        --     url = "https://github.com/JorritSalverda/" .. name .. "/releases/download/v" .. version .. "/" .. name .. "-v" .. version .. "windows-amd64.zip",
-        --     -- shasum of the release archive
-        --     sha256 = "",
-        --     resources = {
-        --         {
-        --             path = name .. ".exe",
-        --             installpath = "bin\\" .. name .. ".exe"
-        --         }
-        --     }
-        -- }
+        },
+        {
+            os = "linux",
+            arch = "amd64",
+            url = "https://github.com/JorritSalverda/" .. name .. "/releases/download/v" .. version .. "/" .. name .. "-v" .. version .. "-linux-amd64.zip",
+            -- shasum of the release archive
+            sha256 = "4b0df86293982de965ed46ba56f734cb9f870922ea28244e581bf9ff4a86b341",
+            resources = {
+                {
+                    path = name,
+                    installpath = "bin/" .. name,
+                    executable = true
+                }
+            }
+        },
+        {
+            os = "windows",
+            arch = "amd64",
+            url = "https://github.com/JorritSalverda/" .. name .. "/releases/download/v" .. version .. "/" .. name .. "-v" .. version .. "windows-amd64.zip",
+            -- shasum of the release archive
+            sha256 = "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5",
+            resources = {
+                {
+                    path = name .. ".exe",
+                    installpath = "bin\\" .. name .. ".exe"
+                }
+            }
+        }
     }
 }
