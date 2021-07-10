@@ -24,6 +24,38 @@ Then install the `infinity` cli with
 brew install jorritsalverda/core/infinity
 ```
 
+## With GoFish
+
+First install [GoFish](https://gofi.sh/):
+
+_MacOS/Linux_
+
+```
+curl -fsSL https://raw.githubusercontent.com/fishworks/gofish/main/scripts/install.sh | bash
+gofish init
+```
+
+_Windows_
+
+```
+Set-ExecutionPolicy Bypass -Scope Process -Force
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/fishworks/gofish/main/scripts/install.ps1'))
+gofish init
+```
+
+And Docker:
+
+```
+gofish install docker
+```
+
+Then install the `infinity` cli with
+
+```
+gofish rig add github.com/JorritSalverda/infinity
+gofish install infinity
+```
+
 ## From source
 
 ```
