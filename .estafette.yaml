@@ -51,12 +51,12 @@ releases:
         - ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe
         - ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64
 
-      clone-stable-tap:
+      clone-tap:
         image: extensions/git-clone:stable
         repo: homebrew-core
         branch: master
 
-      create-stable-brew-formula:
+      create-brew-formula:
         image: extensions/brew:stable
         formula: infinity
         description: Infinity is a CLI to easily build your applications using a pipeline as code
@@ -64,7 +64,7 @@ releases:
         binaryURL: https://github.com/JorritSalverda/infinity/releases/download/v${ESTAFETTE_BUILD_VERSION}/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64.zip
         tapRepoDir: homebrew-core
 
-      push-stable-to-tap:
+      push-to-tap:
         image: golang:1.16-alpine
         commands:
         - apk add git
@@ -75,3 +75,24 @@ releases:
         - git add --all
         - git commit --allow-empty -m "infinity v${ESTAFETTE_BUILD_VERSION}"
         - git push origin master
+
+      clone-fish-food:
+        image: extensions/git-clone:stable
+        repo: fish-food
+        branch: main
+
+      create-fish-food:
+        image: extensions/gofish:stable
+        description: Infinity is a CLI to easily build your applications using a pipeline as code
+
+      push-to-tap:
+        image: golang:1.16-alpine
+        commands:
+        - apk add git
+        - cd fish-food
+        - git config user.email 'bot@estafette.io'
+        - git config user.name 'estafette.bot'
+        - git status
+        - git add --all
+        - git commit --allow-empty -m "infinity v${ESTAFETTE_BUILD_VERSION}"
+        - git push origin main

@@ -52,7 +52,7 @@ gofish install docker
 Then install the `infinity` cli with
 
 ```
-gofish rig add https://github.com/JorritSalverda/infinity
+gofish rig add https://github.com/JorritSalverda/fish-food
 gofish install infinity
 ```
 
