@@ -15,7 +15,7 @@ food = {
             sha256 = "b210399a32c0189bdc1c46571cb19ef09b3843952eb9f089fa2c61c1c6a9f7ab",
             resources = {
                 {
-                    path = name,
+                    path = name .. "-v" .. version .. "-darwin-amd64",
                     installpath = "bin/" .. name,
                     executable = true
                 }
