@@ -24,7 +24,7 @@ food = {
         -- {
         --     os = "linux",
         --     arch = "amd64",
-        --     url = "https://github.com/JorritSalverda/" .. name .. "/releases/download/v" .. version .. "/" .. name .. "-v" .. version .. "-linux-amd64.tar.gz",
+        --     url = "https://github.com/JorritSalverda/" .. name .. "/releases/download/v" .. version .. "/" .. name .. "-v" .. version .. "-linux-amd64.zip",
         --     -- shasum of the release archive
         --     sha256 = "",
         --     resources = {
