@@ -91,7 +91,7 @@ releases:
       clone-rig:
         image: extensions/git-clone:stable
         repo: fish-food
-        branch: main
+        branch: master
 
       create-fish-food:
         image: extensions/gofish:stable
@@ -107,4 +107,4 @@ releases:
         - git status
         - git add --all
         - git commit --allow-empty -m "infinity v${ESTAFETTE_BUILD_VERSION}"
-        - git push origin main
+        - git push origin master
