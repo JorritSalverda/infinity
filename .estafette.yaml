@@ -32,7 +32,7 @@ stages:
   #   - jsalverda
 
 releases:
-  stable:
+  github-release:
     clone: true
     stages:
       build:
@@ -51,6 +51,12 @@ releases:
         - ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe
         - ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64
 
+  brew-release:
+    triggers:
+    - release:
+        name: self
+        target: github-release
+    stages:
       clone-tap:
         image: extensions/git-clone:stable
         repo: homebrew-core
@@ -76,6 +82,12 @@ releases:
         - git commit --allow-empty -m "infinity v${ESTAFETTE_BUILD_VERSION}"
         - git push origin master
 
+  gofish-release:
+    triggers:
+    - release:
+        name: self
+        target: github-release
+    stages:
       clone-fish-food:
         image: extensions/git-clone:stable
         repo: fish-food
