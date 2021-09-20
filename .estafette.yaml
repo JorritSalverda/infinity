@@ -9,7 +9,7 @@ version:
 
 stages:
   build:
-    image: golang:1.16-alpine
+    image: golang:1.17-alpine
     env:
       CGO_ENABLED: 0
     commands:
@@ -36,7 +36,7 @@ releases:
     clone: true
     stages:
       build:
-        image: golang:1.16-alpine
+        image: golang:1.17-alpine
         env:
           CGO_ENABLED: 0
         commands:

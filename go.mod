@@ -1,6 +1,6 @@
 module github.com/JorritSalverda/infinity
 
-go 1.16
+go 1.17
 
 require (
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
@@ -12,4 +12,11 @@ require (
 	github.com/spf13/cobra v1.2.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/mattn/go-isatty v0.0.3 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
+	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 )
