@@ -46,9 +46,11 @@ jobs:
           environment:
             CGO_ENABLED: 0
           command: |
-            GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-linux-amd64 .
-            GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe .
-            GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${ESTAFETTE_BUILD_VERSION}" -o ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64 .
+            GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v${CIRCLE_BUILD_NUM}-linux-amd64 .
+            GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v${CIRCLE_BUILD_NUM}-windows-amd64.exe .
+            GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v${CIRCLE_BUILD_NUM}-darwin-amd64 .
+
+            ls -latr ./binaries
 
 workflows:
   build:
