@@ -1,0 +1,11 @@
+image: golang:1.17-alpine
+
+stages:
+  - build
+
+build-job:
+  stage: build
+  variables:
+    CGO_ENABLED: 0
+  script:
+    - go test -failfast ./...
