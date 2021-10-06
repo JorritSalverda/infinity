@@ -45,7 +45,7 @@ func (m *ManifestMetadata) SetDefault() {
 
 func (m *ManifestMetadata) Validate() (warnings []string, errors []error) {
 	if !m.ApplicationType.IsSupported() {
-		errors = append(errors, fmt.Errorf("application is unknown; set to a supported application type with 'application: %v'", strings.Join(SupportedApplicationTypes.ToStringArray(), "|")))
+		errors = append(errors, fmt.Errorf("application is unknown; set to a supported application type with 'type: %v'", strings.Join(SupportedApplicationTypes.ToStringArray(), "|")))
 	}
 	if !m.Language.IsSupported() {
 		errors = append(errors, fmt.Errorf("language is unknown; set to a supported language with 'language: %v'", strings.Join(SupportedLanguages.ToStringArray(), "|")))

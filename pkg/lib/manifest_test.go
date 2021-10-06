@@ -74,7 +74,7 @@ func TestValidateForManifest(t *testing.T) {
 		_, errors := manifest.Validate()
 
 		assert.Equal(t, 1, len(errors))
-		assert.Equal(t, "application is unknown; set to a supported application type with 'application: library|cli|firmware|api|web|controller'", errors[0].Error())
+		assert.Equal(t, "application is unknown; set to a supported application type with 'type: library|cli|firmware|api|web|controller'", errors[0].Error())
 	})
 
 	t.Run("ReturnsErrorIfLanguageIsUnknown", func(t *testing.T) {
