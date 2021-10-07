@@ -97,6 +97,7 @@ type ManifestStage struct {
 	Volumes               []string               `yaml:"volumes,omitempty" json:"volumes,omitempty"`
 	Devices               []string               `yaml:"devices,omitempty" json:"devices,omitempty"`
 	Env                   map[string]string      `yaml:"env,omitempty" json:"env,omitempty"`
+	Shell                 string                 `yaml:"shell,omitempty" json:"shell,omitempty"`
 	Commands              []string               `yaml:"commands,omitempty" json:"commands,omitempty"`
 	Stages                []*ManifestStage       `yaml:"stages,omitempty" json:"stages,omitempty"`
 	Parameters            map[string]interface{} `yaml:",inline"`
@@ -116,6 +117,9 @@ func (s *ManifestStage) SetDefault() {
 	}
 	if s.Env == nil {
 		s.Env = make(map[string]string)
+	}
+	if s.Shell == "" {
+		s.Shell = "/bin/sh"
 	}
 	for _, st := range s.Stages {
 		st.SetDefault()

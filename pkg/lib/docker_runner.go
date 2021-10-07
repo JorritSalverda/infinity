@@ -168,7 +168,7 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 		dockerRunArgs = append(dockerRunArgs, "--privileged")
 	}
 	if len(stage.Commands) > 0 {
-		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--entrypoint=%v", "/bin/sh"))
+		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--entrypoint=%v", stage.Shell))
 	}
 
 	dockerRunArgs = append(dockerRunArgs, stage.Image)
