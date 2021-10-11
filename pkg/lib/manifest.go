@@ -7,6 +7,7 @@ import (
 
 type Manifest struct {
 	Metadata ManifestMetadata  `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+	Env      map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
 	Targets  []*ManifestTarget `yaml:"targets,omitempty" json:"targets,omitempty"`
 }
 
@@ -58,8 +59,9 @@ func (m *ManifestMetadata) Validate() (warnings []string, errors []error) {
 }
 
 type ManifestTarget struct {
-	Name   string           `yaml:"name,omitempty" json:"name,omitempty"`
-	Stages []*ManifestStage `yaml:"stages,omitempty" json:"stages,omitempty"`
+	Name   string            `yaml:"name,omitempty" json:"name,omitempty"`
+	Env    map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
+	Stages []*ManifestStage  `yaml:"stages,omitempty" json:"stages,omitempty"`
 }
 
 func (b *ManifestTarget) SetDefault() {

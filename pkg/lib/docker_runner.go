@@ -19,7 +19,7 @@ import (
 type DockerRunner interface {
 	ContainerImageIsPulled(ctx context.Context, logger *log.Logger, stage ManifestStage) (isPulled bool, err error)
 	ContainerPull(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error)
-	ContainerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, needsNetwork bool) (err error)
+	ContainerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, env map[string]string, needsNetwork bool) (err error)
 	ContainerLogs(ctx context.Context, logger *log.Logger, stage ManifestStage, containerID string) (err error)
 	ContainerGetExitCode(ctx context.Context, logger *log.Logger, containerID string) (exitCode int, err error)
 	ContainerWait(ctx context.Context, logger *log.Logger, containerID string) (err error)
@@ -115,7 +115,7 @@ func (b *dockerRunner) ContainerPull(ctx context.Context, logger *log.Logger, st
 	return nil
 }
 
-func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, needsNetwork bool) (err error) {
+func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, stage ManifestStage, env map[string]string, needsNetwork bool) (err error) {
 
 	pwd, err := filepath.Abs(b.buildDirectory)
 	if err != nil {
@@ -146,12 +146,6 @@ func (b *dockerRunner) ContainerStart(ctx context.Context, logger *log.Logger, s
 	}
 	for _, d := range stage.Devices {
 		dockerRunArgs = append(dockerRunArgs, fmt.Sprintf("--device=%v", d))
-	}
-
-	// add parameters to envvars
-	env := stage.Env
-	for k, v := range stage.Parameters {
-		env[ToUpperSnakeCase("INFINITY_PARAMETER_"+k)] = fmt.Sprintf("%v", v)
 	}
 
 	// loop envvars in sorted order

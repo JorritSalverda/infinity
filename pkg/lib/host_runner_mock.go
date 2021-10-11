@@ -6,44 +6,45 @@ package lib
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	log "log"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockHostRunner is a mock of HostRunner interface
+// MockHostRunner is a mock of HostRunner interface.
 type MockHostRunner struct {
 	ctrl     *gomock.Controller
 	recorder *MockHostRunnerMockRecorder
 }
 
-// MockHostRunnerMockRecorder is the mock recorder for MockHostRunner
+// MockHostRunnerMockRecorder is the mock recorder for MockHostRunner.
 type MockHostRunnerMockRecorder struct {
 	mock *MockHostRunner
 }
 
-// NewMockHostRunner creates a new mock instance
+// NewMockHostRunner creates a new mock instance.
 func NewMockHostRunner(ctrl *gomock.Controller) *MockHostRunner {
 	mock := &MockHostRunner{ctrl: ctrl}
 	mock.recorder = &MockHostRunnerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockHostRunner) EXPECT() *MockHostRunnerMockRecorder {
 	return m.recorder
 }
 
-// RunStage mocks base method
-func (m *MockHostRunner) RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage) error {
+// RunStage mocks base method.
+func (m *MockHostRunner) RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage, env map[string]string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunStage", ctx, logger, stage)
+	ret := m.ctrl.Call(m, "RunStage", ctx, logger, stage, env)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RunStage indicates an expected call of RunStage
-func (mr *MockHostRunnerMockRecorder) RunStage(ctx, logger, stage interface{}) *gomock.Call {
+// RunStage indicates an expected call of RunStage.
+func (mr *MockHostRunnerMockRecorder) RunStage(ctx, logger, stage, env interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunStage", reflect.TypeOf((*MockHostRunner)(nil).RunStage), ctx, logger, stage)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunStage", reflect.TypeOf((*MockHostRunner)(nil).RunStage), ctx, logger, stage, env)
 }

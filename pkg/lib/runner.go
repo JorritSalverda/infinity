@@ -30,7 +30,6 @@ type runner struct {
 }
 
 func NewRunner(manifestReader ManifestReader, dockerRunner DockerRunner, hostRunner HostRunner, forcePull bool, buildDirectory, buildManifestFilename string) Runner {
-
 	return &runner{
 		manifestReader:        manifestReader,
 		dockerRunner:          dockerRunner,
@@ -146,8 +145,24 @@ func (b *runner) runManifest(ctx context.Context, manifest Manifest, target stri
 		}()
 	}
 
+	// get metadata as envvars
+	env := map[string]string{}
+	env["INFINITY_METADATA_NAME"] = manifest.Metadata.Name
+	env["INFINITY_METADATA_TYPE"] = string(manifest.Metadata.ApplicationType)
+	env["INFINITY_METADATA_LANGUAGE"] = string(manifest.Metadata.Language)
+
+	//  add/overwrite global environment variables
+	for k, v := range manifest.Env {
+		env[k] = v
+	}
+
+	// add/overwrite target environment variables
+	for k, v := range manifestTarget.Env {
+		env[k] = v
+	}
+
 	for _, stage := range manifestTarget.Stages {
-		err = b.runStage(ctx, *stage, needsNetwork)
+		err = b.runStage(ctx, *stage, env, needsNetwork)
 		log.Println("")
 		if err != nil {
 			return
@@ -171,7 +186,7 @@ func (b *runner) setColorCode(stages []*ManifestStage) {
 	}
 }
 
-func (b *runner) runStage(ctx context.Context, stage ManifestStage, needsNetwork bool, prefixes ...string) (err error) {
+func (b *runner) runStage(ctx context.Context, stage ManifestStage, env map[string]string, needsNetwork bool, prefixes ...string) (err error) {
 
 	prefixes = append(prefixes, stage.Name)
 	prefix := strings.Join(prefixes, "] [")
@@ -179,7 +194,17 @@ func (b *runner) runStage(ctx context.Context, stage ManifestStage, needsNetwork
 	logger := log.New(os.Stdout, aurora.Index(stage.colorCode, fmt.Sprintf("[%v] ", prefix)).String(), 0)
 
 	if len(stage.Stages) > 0 {
-		return b.runParallelStages(ctx, stage, needsNetwork)
+		return b.runParallelStages(ctx, stage, env, needsNetwork)
+	}
+
+	// add and override with stage environment variables
+	for k, v := range stage.Env {
+		env[k] = v
+	}
+
+	// add parameters to envvars
+	for k, v := range stage.Parameters {
+		env[ToUpperSnakeCase("INFINITY_PARAMETER_"+k)] = fmt.Sprintf("%v", v)
 	}
 
 	switch stage.RunnerType {
@@ -204,7 +229,7 @@ func (b *runner) runStage(ctx context.Context, stage ManifestStage, needsNetwork
 		}
 
 		if err = b.handleFunc(ctx, logger, func() error {
-			return b.dockerRunner.ContainerStart(ctx, logger, stage, needsNetwork)
+			return b.dockerRunner.ContainerStart(ctx, logger, stage, env, needsNetwork)
 		}); err != nil {
 			if errors.Is(err, ErrCanceled) {
 				return nil
@@ -215,17 +240,17 @@ func (b *runner) runStage(ctx context.Context, stage ManifestStage, needsNetwork
 		return nil
 
 	case RunnerTypeHost:
-		return b.hostRunner.RunStage(ctx, logger, stage)
+		return b.hostRunner.RunStage(ctx, logger, stage, env)
 	}
 
 	return fmt.Errorf("runner %v is not supported", stage.RunnerType)
 }
 
-func (b *runner) runParallelStages(ctx context.Context, stage ManifestStage, needsNetwork bool) (err error) {
+func (b *runner) runParallelStages(ctx context.Context, stage ManifestStage, env map[string]string, needsNetwork bool) (err error) {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, s := range stage.Stages {
 		s := s
-		g.Go(func() error { return b.runStage(ctx, *s, needsNetwork, stage.Name) })
+		g.Go(func() error { return b.runStage(ctx, *s, env, needsNetwork, stage.Name) })
 	}
 
 	return g.Wait()

@@ -42,7 +42,7 @@ func TestContainerStart(t *testing.T) {
 		runner := NewDockerRunner(commandRunner, randomStringGenerator, "")
 
 		// act
-		err = runner.ContainerStart(context.Background(), logger, stage, false)
+		err = runner.ContainerStart(context.Background(), logger, stage, map[string]string{"INFINITY_PARAMETER_VULNERABILITY_THRESHOLD": "CRITICAL", "INFINITY_PARAMETER_CONTAINER_NAME": "mycontainer"}, false)
 
 		assert.Nil(t, err)
 	})
@@ -77,7 +77,7 @@ func TestContainerStart(t *testing.T) {
 		runner := NewDockerRunner(commandRunner, randomStringGenerator, "")
 
 		// act
-		err = runner.ContainerStart(context.Background(), logger, stage, false)
+		err = runner.ContainerStart(context.Background(), logger, stage, map[string]string{"INFINITY_PARAMETER_VULNERABILITY_THRESHOLD": "CRITICAL", "INFINITY_PARAMETER_CONTAINER_NAME": "mycontainer"}, false)
 
 		assert.Nil(t, err)
 	})
@@ -112,7 +112,7 @@ func TestContainerStart(t *testing.T) {
 		runner := NewDockerRunner(commandRunner, randomStringGenerator, "")
 
 		// act
-		err = runner.ContainerStart(context.Background(), logger, stage, false)
+		err = runner.ContainerStart(context.Background(), logger, stage, map[string]string{"INFINITY_PARAMETER_VULNERABILITY_THRESHOLD": "CRITICAL", "INFINITY_PARAMETER_CONTAINER_NAME": "mycontainer"}, false)
 
 		assert.Nil(t, err)
 	})

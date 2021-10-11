@@ -12,7 +12,7 @@ import (
 
 //go:generate mockgen -package=lib -destination ./host_runner_mock.go -source=host_runner.go
 type HostRunner interface {
-	RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error)
+	RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage, env map[string]string) (err error)
 }
 
 type hostRunner struct {
@@ -21,15 +21,20 @@ type hostRunner struct {
 }
 
 func NewHostRunner(commandRunner CommandRunner, buildDirectory string) HostRunner {
-
 	return &hostRunner{
 		commandRunner:  commandRunner,
 		buildDirectory: buildDirectory,
 	}
 }
 
-func (b *hostRunner) RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage) (err error) {
+func (b *hostRunner) RunStage(ctx context.Context, logger *log.Logger, stage ManifestStage, env map[string]string) (err error) {
 	logger.Printf(aurora.Gray(12, "Starting stage on host").String())
+
+	// loop envvars in sorted order
+	envArray := make([]string, 0, len(env))
+	for k, v := range env {
+		envArray = append(envArray, fmt.Sprintf("%v=%v", k, v))
+	}
 
 	start := time.Now()
 
@@ -37,7 +42,7 @@ func (b *hostRunner) RunStage(ctx context.Context, logger *log.Logger, stage Man
 		logger.Printf(aurora.Gray(12, "> %v").String(), c)
 
 		splitCommands := strings.Split(c, " ")
-		err = b.commandRunner.RunCommand(ctx, logger, b.buildDirectory, splitCommands[0], splitCommands[1:])
+		err = b.commandRunner.RunCommandWithEnv(ctx, logger, b.buildDirectory, splitCommands[0], splitCommands[1:], envArray)
 		if err != nil {
 			break
 		}

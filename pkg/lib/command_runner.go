@@ -15,7 +15,9 @@ import (
 //go:generate mockgen -package=lib -destination ./command_runner_mock.go -source=command_runner.go
 type CommandRunner interface {
 	RunCommand(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error)
+	RunCommandWithEnv(ctx context.Context, logger *log.Logger, dir, command string, args []string, env []string) (err error)
 	RunCommandWithOutput(ctx context.Context, logger *log.Logger, dir, command string, args []string) (output []byte, err error)
+	RunCommandWithOutputAndEnv(ctx context.Context, logger *log.Logger, dir, command string, args []string, env []string) (output []byte, err error)
 }
 
 type commandRunner struct {
@@ -29,6 +31,10 @@ func NewCommandRunner(verbose bool) CommandRunner {
 }
 
 func (c *commandRunner) RunCommand(ctx context.Context, logger *log.Logger, dir, command string, args []string) (err error) {
+	return c.RunCommandWithEnv(ctx, logger, dir, command, args, os.Environ())
+}
+
+func (c *commandRunner) RunCommandWithEnv(ctx context.Context, logger *log.Logger, dir, command string, args []string, env []string) (err error) {
 	if c.verbose {
 		if logger != nil {
 			logger.Printf(aurora.Gray(12, "> %v %v").String(), command, strings.Join(args, " "))
@@ -38,7 +44,7 @@ func (c *commandRunner) RunCommand(ctx context.Context, logger *log.Logger, dir,
 	}
 
 	cmd := exec.CommandContext(ctx, command, args...)
-	cmd.Env = os.Environ()
+	cmd.Env = env
 	cmd.Dir = dir
 
 	stdout, err := cmd.StdoutPipe()
@@ -75,6 +81,10 @@ func (c *commandRunner) RunCommand(ctx context.Context, logger *log.Logger, dir,
 }
 
 func (c *commandRunner) RunCommandWithOutput(ctx context.Context, logger *log.Logger, dir, command string, args []string) (output []byte, err error) {
+	return c.RunCommandWithOutputAndEnv(ctx, logger, dir, command, args, os.Environ())
+}
+
+func (c *commandRunner) RunCommandWithOutputAndEnv(ctx context.Context, logger *log.Logger, dir, command string, args []string, env []string) (output []byte, err error) {
 	if c.verbose {
 		if logger != nil {
 			logger.Printf(aurora.Gray(12, "> %v %v").String(), command, strings.Join(args, " "))
@@ -84,7 +94,7 @@ func (c *commandRunner) RunCommandWithOutput(ctx context.Context, logger *log.Lo
 	}
 
 	cmd := exec.CommandContext(ctx, command, args...)
-	cmd.Env = os.Environ()
+	cmd.Env = env
 	cmd.Dir = dir
 
 	return cmd.CombinedOutput()
