@@ -51,37 +51,6 @@ releases:
         - ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-windows-amd64.exe
         - ./binaries/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64
 
-  brew-release:
-    triggers:
-    - release:
-        name: self
-        target: github-release
-    stages:
-      clone-tap:
-        image: extensions/git-clone:stable
-        repo: homebrew-core
-        branch: master
-
-      create-brew-formula:
-        image: extensions/brew:stable
-        formula: infinity
-        description: Infinity is a CLI to easily build your applications using a pipeline as code
-        homepage: https://github.com/JorritSalverda/infinity
-        binaryURL: https://github.com/JorritSalverda/infinity/releases/download/v${ESTAFETTE_BUILD_VERSION}/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64.zip
-        tapRepoDir: homebrew-core
-
-      push-tap:
-        image: alpine:3.13
-        commands:
-        - apk add git
-        - cd homebrew-core
-        - git config user.email 'bot@estafette.io'
-        - git config user.name 'estafette.bot'
-        - git status
-        - git add --all
-        - git commit --allow-empty -m "infinity v${ESTAFETTE_BUILD_VERSION}"
-        - git push origin master
-
   gofish-release:
     triggers:
     - release:
@@ -102,6 +71,37 @@ releases:
         commands:
         - apk add git
         - cd fish-food
+        - git config user.email 'bot@estafette.io'
+        - git config user.name 'estafette.bot'
+        - git status
+        - git add --all
+        - git commit --allow-empty -m "infinity v${ESTAFETTE_BUILD_VERSION}"
+        - git push origin master
+
+  brew-release:
+    triggers:
+    - release:
+        name: self
+        target: gofish-release
+    stages:
+      clone-tap:
+        image: extensions/git-clone:stable
+        repo: homebrew-core
+        branch: master
+
+      create-brew-formula:
+        image: extensions/brew:stable
+        formula: infinity
+        description: Infinity is a CLI to easily build your applications using a pipeline as code
+        homepage: https://github.com/JorritSalverda/infinity
+        binaryURL: https://github.com/JorritSalverda/infinity/releases/download/v${ESTAFETTE_BUILD_VERSION}/${ESTAFETTE_GIT_NAME}-v${ESTAFETTE_BUILD_VERSION}-darwin-amd64.zip
+        tapRepoDir: homebrew-core
+
+      push-tap:
+        image: alpine:3.13
+        commands:
+        - apk add git
+        - cd homebrew-core
         - git config user.email 'bot@estafette.io'
         - git config user.name 'estafette.bot'
         - git status
