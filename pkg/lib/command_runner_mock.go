@@ -36,59 +36,40 @@ func (m *MockCommandRunner) EXPECT() *MockCommandRunnerMockRecorder {
 }
 
 // RunCommand mocks base method.
-func (m *MockCommandRunner) RunCommand(ctx context.Context, logger *log.Logger, dir, command string, args []string) error {
+func (m *MockCommandRunner) RunCommand(ctx context.Context, logger *log.Logger, dir, command string, args []string, env ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunCommand", ctx, logger, dir, command, args)
+	varargs := []interface{}{ctx, logger, dir, command, args}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RunCommand", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RunCommand indicates an expected call of RunCommand.
-func (mr *MockCommandRunnerMockRecorder) RunCommand(ctx, logger, dir, command, args interface{}) *gomock.Call {
+func (mr *MockCommandRunnerMockRecorder) RunCommand(ctx, logger, dir, command, args interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommand", reflect.TypeOf((*MockCommandRunner)(nil).RunCommand), ctx, logger, dir, command, args)
-}
-
-// RunCommandWithEnv mocks base method.
-func (m *MockCommandRunner) RunCommandWithEnv(ctx context.Context, logger *log.Logger, dir, command string, args, env []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunCommandWithEnv", ctx, logger, dir, command, args, env)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RunCommandWithEnv indicates an expected call of RunCommandWithEnv.
-func (mr *MockCommandRunnerMockRecorder) RunCommandWithEnv(ctx, logger, dir, command, args, env interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithEnv", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithEnv), ctx, logger, dir, command, args, env)
+	varargs := append([]interface{}{ctx, logger, dir, command, args}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommand", reflect.TypeOf((*MockCommandRunner)(nil).RunCommand), varargs...)
 }
 
 // RunCommandWithOutput mocks base method.
-func (m *MockCommandRunner) RunCommandWithOutput(ctx context.Context, logger *log.Logger, dir, command string, args []string) ([]byte, error) {
+func (m *MockCommandRunner) RunCommandWithOutput(ctx context.Context, logger *log.Logger, dir, command string, args []string, env ...string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunCommandWithOutput", ctx, logger, dir, command, args)
+	varargs := []interface{}{ctx, logger, dir, command, args}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RunCommandWithOutput", varargs...)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RunCommandWithOutput indicates an expected call of RunCommandWithOutput.
-func (mr *MockCommandRunnerMockRecorder) RunCommandWithOutput(ctx, logger, dir, command, args interface{}) *gomock.Call {
+func (mr *MockCommandRunnerMockRecorder) RunCommandWithOutput(ctx, logger, dir, command, args interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithOutput", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithOutput), ctx, logger, dir, command, args)
-}
-
-// RunCommandWithOutputAndEnv mocks base method.
-func (m *MockCommandRunner) RunCommandWithOutputAndEnv(ctx context.Context, logger *log.Logger, dir, command string, args, env []string) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunCommandWithOutputAndEnv", ctx, logger, dir, command, args, env)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RunCommandWithOutputAndEnv indicates an expected call of RunCommandWithOutputAndEnv.
-func (mr *MockCommandRunnerMockRecorder) RunCommandWithOutputAndEnv(ctx, logger, dir, command, args, env interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithOutputAndEnv", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithOutputAndEnv), ctx, logger, dir, command, args, env)
+	varargs := append([]interface{}{ctx, logger, dir, command, args}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunCommandWithOutput", reflect.TypeOf((*MockCommandRunner)(nil).RunCommandWithOutput), varargs...)
 }

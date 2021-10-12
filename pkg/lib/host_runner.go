@@ -42,7 +42,7 @@ func (b *hostRunner) RunStage(ctx context.Context, logger *log.Logger, stage Man
 		logger.Printf(aurora.Gray(12, "> %v").String(), c)
 
 		splitCommands := strings.Split(c, " ")
-		err = b.commandRunner.RunCommandWithEnv(ctx, logger, b.buildDirectory, splitCommands[0], splitCommands[1:], envArray)
+		err = b.commandRunner.RunCommand(ctx, logger, b.buildDirectory, splitCommands[0], splitCommands[1:], envArray...)
 		if err != nil {
 			break
 		}
