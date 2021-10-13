@@ -61,7 +61,9 @@ workflows:
           type: approval
           requires:
             - build
-      - create-binaries
-      - publish-github-release:
+      - create-binaries:
           requires:
             - hold
+      - publish-github-release:
+          requires:
+            - create-binaries
