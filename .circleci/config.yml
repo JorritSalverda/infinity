@@ -51,7 +51,7 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             VERSION=$(my-binary --version)
-          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete v0.3.${VERSION} ./binaries
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete v0.3.${VERSION} ./binaries
 
 workflows:
   build:
