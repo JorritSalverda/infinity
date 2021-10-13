@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  github-release: haskell-works/github-release@1.3.3
-
 jobs:
   build:
     working_directory: ~/repo
@@ -28,22 +25,13 @@ jobs:
       - store_test_results:
           path: /tmp/test-reports
 
-  github_release:
+  create-binaries:
     working_directory: ~/repo
     docker:
       - image: circleci/golang:1.17
     steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
-      - run:
-          name: Install Dependencies
-          command: go mod download
-      - save_cache:
-          key: go-mod-v4-{{ checksum "go.sum" }}
-          paths:
-            - "/go/pkg/mod"
+      - attach_workspace:
+          at: ./
       - run:
           name: Build binaries
           environment:
@@ -52,10 +40,18 @@ jobs:
             GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=0.3.${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v0.3.${CIRCLE_BUILD_NUM}-linux-amd64 .
             GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=0.3.${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v0.3.${CIRCLE_BUILD_NUM}-windows-amd64.exe .
             GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=0.3.${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v0.3.${CIRCLE_BUILD_NUM}-darwin-amd64 .
-      - github/release:
-          tag: v0.3.$CIRCLE_BUILD_NUM
-          title: ${CIRCLE_PROJECT_REPONAME} v0.3.$CIRCLE_BUILD_NUM
-          artefacts-folder: ./binaries/
+
+  publish-github-release:
+    docker:
+      - image: cibuilds/github:0.10
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            VERSION=$(my-binary --version)
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete v0.3.${VERSION} ./binaries
 
 workflows:
   build:
@@ -65,6 +61,7 @@ workflows:
           type: approval
           requires:
             - build
-      - github_release:
+      - create-binaries
+      - publish-github-release:
           requires:
             - hold
