@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  github-release: haskell-works/github-release@1.3.3
+
 jobs:
   build:
     working_directory: ~/repo
@@ -46,16 +49,22 @@ jobs:
           environment:
             CGO_ENABLED: 0
           command: |
-            GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v${CIRCLE_BUILD_NUM}-linux-amd64 .
-            GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v${CIRCLE_BUILD_NUM}-windows-amd64.exe .
-            GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v${CIRCLE_BUILD_NUM}-darwin-amd64 .
-
-            ls -latr ./binaries
+            GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=0.3.${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v0.3.${CIRCLE_BUILD_NUM}-linux-amd64 .
+            GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=0.3.${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v0.3.${CIRCLE_BUILD_NUM}-windows-amd64.exe .
+            GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=0.3.${CIRCLE_BUILD_NUM}" -o ./binaries/${CIRCLE_PROJECT_REPONAME}-v0.3.${CIRCLE_BUILD_NUM}-darwin-amd64 .
+      - github/release:
+          tag: v0.3.$CIRCLE_BUILD_NUM
+          title: ${CIRCLE_PROJECT_REPONAME} v0.3.$CIRCLE_BUILD_NUM
+          artefacts-folder: ./binaries/
 
 workflows:
   build:
     jobs:
       - build
-  github_release:
-    jobs:
-      - github_release
+      - hold:
+          type: approval
+          requires:
+            - build
+      - github_release:
+          requires:
+            - hold
