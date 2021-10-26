@@ -10,6 +10,8 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: 1.17
+    - name: Download modules
+      run: go mod download -v
     - name: Build
       run: go build -v ./...
     - name: Test
@@ -18,6 +20,6 @@ jobs:
       env:
         CGO_ENABLED: 0
       run: |
-        - GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-linux-amd64 .
-        - GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-windows-amd64.exe .
-        - GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-darwin-amd64 .
+        GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-linux-amd64 .
+        GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-windows-amd64.exe .
+        GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-darwin-amd64 .
