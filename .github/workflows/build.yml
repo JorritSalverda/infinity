@@ -49,22 +49,20 @@ jobs:
           rustup target add x86_64-unknown-linux-musl
           cargo build --release --target x86_64-unknown-linux-musl
           sudo apt-get install -y --no-install-recommends musl-tools
-
-      - run: |
-          # mac
-          rustup target add x86_64-apple-darwin
-          cargo build --release --target x86_64-apple-darwin
+          ls -latr target/x86_64-unknown-linux-musl/release
 
       - run: |
           # windows
           rustup target add x86_64-pc-windows-gnu
           sudo apt-get install -y --no-install-recommends mingw-w64
           cargo build --release --target x86_64-pc-windows-gnu
+          ls -latr target/x86_64-pc-windows-gnu/release
 
       - run: |
-          ls -latr target/x86_64-unknown-linux-musl/release
+          # mac
+          rustup target add x86_64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
           ls -latr target/x86_64-apple-darwin/release
-          ls -latr target/x86_64-pc-windows-gnu/release
 
   tag:
     runs-on: ubuntu-latest
