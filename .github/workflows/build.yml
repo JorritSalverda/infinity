@@ -48,7 +48,7 @@ jobs:
           # linux
           rustup target add x86_64-unknown-linux-musl
           cargo build --release --target x86_64-unknown-linux-musl
-          sudo apt-get install -y --no-install-recommends musl-tools
+          # sudo apt-get install -y --no-install-recommends musl-tools
           ls -latr target/x86_64-unknown-linux-musl/release
 
       - run: |
