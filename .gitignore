@@ -17,3 +17,7 @@
 .DS_Store
 infinity
 infinity-*
+
+# Added by cargo
+
+/target
