@@ -1,0 +1,33 @@
+name: Go
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - id: version
+      uses: paulhatch/semantic-version@v4.0.2
+      with:
+        change_path: "cmd pkg"
+    - run: |
+        env
+    - name: Download modules
+      run: go mod download
+    - name: Build
+      run: go build -v ./...
+    - name: Test
+      run: go test -failfast -v ./...
+    - name: Create binaries
+      env:
+        CGO_ENABLED: 0
+      run: |
+        GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-linux-amd64 .
+        GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-windows-amd64.exe .
+        GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags "-X github.com/JorritSalverda/infinity/cmd.version=${GITHUB_RUN_NUMBER}" -o ./binaries/infinity-v${GITHUB_RUN_NUMBER}-darwin-amd64 .
